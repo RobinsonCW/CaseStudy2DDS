@@ -1,0 +1,423 @@
+---
+title: "Exploratory Data Analysis"
+author: "Chance Robinson"
+date: "11/25/2019"
+output: 
+  github_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exploratory Data Analysis
+
+## Library Imports
+
+
+```{r library-imports, quietely=TRUE, warn.conflicts=FALSE}
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+# Correlation Matrix
+library(ggcorrplot)
+library(Hmisc)
+#Lasso
+library(glmnet)
+# Resampling
+library(caret)
+library(DMwR)
+# KNN
+library(class)
+# Random Forrest
+library(randomForest)  
+library(e1071)  
+```
+
+## Load the CSV Data
+
+```{r load-data}
+data <- read.csv("../../data/CaseStudy2-data.csv", stringsAsFactors=TRUE)
+```
+
+## Default Output
+
+```{r head-data}
+head(data)
+```
+
+### Identify Dimensions
+ 
+```{r data-dimensions}
+dim(data)
+```
+
+
+### Data Columns
+
+```{r data-columns}
+colnames(data)
+```
+
+### Convert Integers to Strings
+
+* These numeric columns will be converted into strings 
+
+```{r data-integers-to-strings}
+
+data$ID <- as.character(data$ID)
+data$EmployeeNumber <- as.character(data$EmployeeNumber)
+data$EmployeeCount <- as.character(data$EmployeeCount)
+data$StandardHours <- as.character(data$StandardHours)
+data$Over18 <- as.character(data$Over18)
+
+```
+
+
+### Convert Integers to Factors
+
+```{r data-integers-to-factors}
+
+data$JobInvolvement <- factor(data$JobInvolvement, ordered = TRUE, 
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$JobSatisfaction <- factor(data$JobSatisfaction, ordered = TRUE, 
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$PerformanceRating <- factor(data$PerformanceRating, ordered = TRUE, 
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Good", "Excellent", "Outstanding"))
+
+data$RelationshipSatisfaction <- factor(data$RelationshipSatisfaction, ordered = TRUE, 
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$WorkLifeBalance <- factor(data$WorkLifeBalance, ordered = TRUE, 
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Bad", "Better", "Good", "Best"))
+
+### THIS WAS NOT ACTUALLY PROVIDED ON THE WALL
+data$EnvironmentSatisfaction <- factor(data$EnvironmentSatisfaction, ordered = TRUE, 
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$StockOptionLevel <- factor(data$StockOptionLevel, ordered = TRUE, 
+                              levels = c(0, 1, 2, 3),
+                              labels = c("Zero", "One", "Two", "Three"))
+
+data$JobLevel <- factor(data$JobLevel, ordered = TRUE, 
+                              levels = c(1, 2, 3, 4, 5),
+                              labels = c("One", "Two", "Three", "Four", "Five"))
+
+data$Education <- factor(data$Education, ordered = FALSE, 
+                              levels = c(1, 2, 3, 4, 5),
+                              labels = c("One", "Two", "Three", "Four", "Five"))
+
+
+```
+
+
+
+### Describe the Data Types
+
+```{r data-describe}
+str(data)
+```
+
+
+### Numeric Columns
+
+
+#### Column Names
+
+```{r data-numeric}
+data.numeric <- data %>%
+  select_if(is.numeric)
+```
+
+#### Summary Tables
+
+```{r data-numeric-summary}
+summary(data.numeric)
+```
+
+
+### Non-Numeric Columns
+
+#### Column Names
+
+```{r data-non-numeric}
+data.non.numeric <- data %>%
+  select_if(is.factor)
+
+colnames(data.non.numeric)
+```
+
+
+```{r data-attrition}
+data.non.numeric %>%
+  count(Attrition, sort = TRUE)
+```
+
+
+```{r data-business-travel}
+data %>%
+  count(BusinessTravel, sort = TRUE)
+```
+
+```{r data-department}
+data.non.numeric %>%
+  count(Department, sort = TRUE)
+```
+
+```{r data-education-field}
+data.non.numeric %>%
+  count(EducationField, sort = TRUE)
+```
+
+```{r data-gender}
+data.non.numeric %>%
+  count(Gender, sort = TRUE)
+```
+
+```{r data-job-role}
+data.non.numeric %>%
+  count(JobRole, sort = TRUE)
+```
+
+```{r data-marital-status}
+data.non.numeric %>%
+  count(MaritalStatus, sort = TRUE)
+```
+
+
+```{r data-over-time}
+data.non.numeric %>%
+  count(OverTime, sort = TRUE)
+```
+
+```{r data-over-time}
+data %>%
+  count(StandardHours, sort = TRUE)
+```
+
+###Correlation matrix for quantitative data
+
+```{r corr-matrix}
+# function for flattening and ordering the correlation matrix
+flattenCorrMatrix <- function(cormat, pmat) {
+  ut <- upper.tri(cormat)
+  data.frame(
+    row = rownames(cormat)[row(cormat)[ut]],
+    column = rownames(cormat)[col(cormat)[ut]],
+    cor  =(cormat)[ut],
+    p = pmat[ut]
+    )
+}
+# See what variables are correlated with each other, p-values
+correlation.matrix <- rcorr(as.matrix(data.numeric))
+corDF <- data.frame(flattenCorrMatrix(correlation.matrix$r, correlation.matrix$P))
+# Order the correlation matrix to show the highest correlated
+# data.frame(corDF[order(-corDF$cor),])
+
+quantDataModel <- corDF[which(corDF$cor >= 0.5),]
+data.frame(quantDataModel[order(-quantDataModel$cor),])
+
+```
+
+```{r}
+corr <- round(cor(data.numeric), 1)
+  
+ggcorrplot(corr, method = "square", type = "full", lab = TRUE)
+```
+
+
+
+```{r}
+
+cols_to_remove <- c("ID", "EmployeeNumber", "EmployeeCount", "StandardHours", "Over18")
+
+data.mod <- data %>%
+  select(-cols_to_remove)
+
+
+# data.mod.ds <- downSample(data.mod, data.mod$Attrition, list = FALSE)
+
+data.mod.us <- upSample(data.mod, data.mod$Attrition, list = FALSE)
+
+model.full <- glm(Attrition~., data = data.mod, family = binomial("logit"))
+summary(model.full)
+
+
+model.reduced.upsampled <- glm(Attrition~DistanceFromHome+JobInvolvement+OverTime+BusinessTravel+NumCompaniesWorked+WorkLifeBalance+EnvironmentSatisfaction+YearsSinceLastPromotion+YearsWithCurrManager+TrainingTimesLastYear, data = data.mod.us, family = binomial("logit"))
+summary(model.reduced.upsampled)
+
+
+```
+
+
+
+```{r}
+table(data.mod.us$Attrition)
+```
+
+```{r}
+
+data.mod$predict <- as.factor(ifelse(model.full$fitted.values >0.5, "Yes", "No"))
+
+data.mod.us$predict <- as.factor(ifelse(model.reduced.upsampled$fitted.values >0.5, "Yes", "No"))
+
+mytable <- table(data.mod.us$Attrition, data.mod.us$predict)
+rownames(mytable) <- c("Obs (No)", "Obs (Yes)")
+colnames(mytable) <- c("Pred (No)","Pred (Yes)")
+mytable
+
+
+```
+
+
+```{r}
+# Confusion matrix
+confusionMatrix(data.mod$Attrition, data.mod$predict, "Yes")
+```
+
+```{r}
+# Confusion matrix
+confusionMatrix(data.mod.us$Attrition, data.mod.us$predict, "Yes")
+```
+
+
+```{r}
+set.seed(1234)
+split.perc = .70
+
+
+# DistanceFromHome+JobInvolvement+OverTime+BusinessTravel+NumCompaniesWorked+WorkLifeBalance+EnvironmentSatisfaction+YearsSinceLastPromotion+YearsWithCurrManager+TrainingTimesLastYear
+
+# cols_to_keep = c("DistanceFromHome", "JobInvolvement", "OverTime", "BusinessTravel", "NumCompaniesWorked", "WorkLifeBalance", "EnvironmentSatisfaction", "YearsSinceLastPromotion", "YearsWithCurrManager", "TrainingTimesLastYear", "Attrition")
+
+cols_to_keep = c("YearsSinceLastPromotion", "YearsWithCurrManager", "TrainingTimesLastYear", "DistanceFromHome", "NumCompaniesWorked", "YearsInCurrentRole", "TotalWorkingYears", "JobInvolvement", "OverTime", "BusinessTravel", "Attrition")
+
+
+
+df_classify <- data.mod.us %>%
+  select(cols_to_keep) %>%
+  mutate(JobInvolvement = as.integer(JobInvolvement)) %>%
+  mutate(OverTime = as.integer(OverTime)) %>%
+  mutate(BusinessTravel = as.integer(BusinessTravel))
+
+
+ #%>%
+  # mutate(EnvironmentSatisfaction = as.integer(EnvironmentSatisfaction))
+
+summary(df_classify)
+
+
+# standardize values
+df_classify$YearsSinceLastPromotion = scale(df_classify$YearsSinceLastPromotion)
+df_classify$YearsWithCurrManager = scale(df_classify$YearsWithCurrManager)
+df_classify$TrainingTimesLastYear = scale(df_classify$TrainingTimesLastYear)
+df_classify$DistanceFromHome = scale(df_classify$DistanceFromHome)
+df_classify$NumCompaniesWorked = scale(df_classify$NumCompaniesWorked)
+df_classify$JobInvolvement = scale(df_classify$JobInvolvement)
+df_classify$OverTime = scale(df_classify$OverTime)
+df_classify$BusinessTravel = scale(df_classify$BusinessTravel)
+df_classify$YearsInCurrentRole = scale(df_classify$YearsInCurrentRole)
+df_classify$TotalWorkingYears = scale(df_classify$TotalWorkingYears)
+
+
+train.indices = sample(1:dim(df_classify)[1],round(split.perc * dim(df_classify)[1]))
+
+train = df_classify[train.indices,]
+test = df_classify[-train.indices,]
+
+dim(df_classify) # 939
+
+dim(train) # 939
+dim(test) # 939
+
+
+```
+
+
+
+
+```{r}
+
+# original scale
+classifications = knn(train[,c(1:10)],test[,c(1:10)], train$Attrition, prob = TRUE, k = 1)
+confusionMatrix(table(test$Attrition,classifications), "Yes")
+
+```
+
+```{r}
+rf = randomForest(Attrition~.,  
+                   ntree = 100,
+                   data = data.mod.us)
+plot(rf) 
+
+
+varImp(rf)
+
+confusionMatrix(data=data.mod.us$predict,  
+                reference=data.mod.us$Attrition, "Yes")
+
+```
+
+
+
+
+```{r}
+iterations = 100
+numks = 30
+
+
+masterAcc = matrix(nrow = iterations, ncol = numks)
+
+for(j in 1:iterations)
+{
+  train.indices = sample(1:dim(df_classify)[1],round(split.perc * dim(df_classify)[1]))
+  train = df_classify[train.indices,]
+  test = df_classify[-train.indices,]
+  for(i in 1:numks)
+  {
+    classifications = knn(train[,c(1:10)],test[,c(1:10)], train$Attrition, prob = TRUE, k = i)
+    table(test$Attrition,classifications)
+    CM = confusionMatrix(table(test$Attrition,classifications), "Yes")
+    masterAcc[j,i] = CM$overall[1]
+  }
+  
+}
+
+MeanAcc = colMeans(masterAcc)
+
+plot(seq(1,numks,1),MeanAcc, type = "l")
+```
+
+
+
+
+
+### Linear Regression
+
+```{r}
+
+cols_to_remove <- c("ID", "EmployeeNumber", "EmployeeCount", "StandardHours", "Over18")
+
+data.mod <- data %>%
+  select(-cols_to_remove)
+
+lm.model.full <- lm(MonthlyIncome~., data = data.mod)
+summary(lm.model.full)
+
+lm.model.reduced <- lm(MonthlyIncome~BusinessTravel+DailyRate+JobLevel+JobRole+TotalWorkingYears, data = data.mod)
+summary(lm.model.reduced)
+
+
+```
+
+
+
