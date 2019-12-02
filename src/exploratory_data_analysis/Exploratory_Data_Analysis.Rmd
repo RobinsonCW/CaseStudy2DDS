@@ -38,7 +38,7 @@ library(e1071)
 ## Load the CSV Data
 
 ```{r load-data}
-data <- read.csv("../../data/CaseStudy2-data.csv", stringsAsFactors=TRUE)
+data <- read.csv("../../data/CaseStudy2-data.csv", stringsAsFactors=TRUE, header = TRUE)
 ```
 
 ## Default Output
@@ -120,7 +120,6 @@ data$Education <- factor(data$Education, ordered = FALSE,
 ```
 
 
-
 ### Describe the Data Types
 
 ```{r data-describe}
@@ -129,7 +128,6 @@ str(data)
 
 
 ### Numeric Columns
-
 
 #### Column Names
 
@@ -194,17 +192,17 @@ data.non.numeric %>%
 ```
 
 
-```{r data-over-time}
+```{r data-over-time-1}
 data.non.numeric %>%
   count(OverTime, sort = TRUE)
 ```
 
-```{r data-over-time}
+```{r data-over-time-2}
 data %>%
   count(StandardHours, sort = TRUE)
 ```
 
-###Correlation matrix for quantitative data
+### Correlation matrix for quantitative data
 
 ```{r corr-matrix}
 # function for flattening and ordering the correlation matrix
@@ -229,12 +227,18 @@ data.frame(quantDataModel[order(-quantDataModel$cor),])
 ```
 
 ```{r}
+
 corr <- round(cor(data.numeric), 1)
-  
 ggcorrplot(corr, method = "square", type = "full", lab = TRUE)
+
 ```
 
 
+# Analysis Question I
+
+- Attrition
+
+## Logistic Regression
 
 ```{r}
 
@@ -247,6 +251,10 @@ data.mod <- data %>%
 # data.mod.ds <- downSample(data.mod, data.mod$Attrition, list = FALSE)
 
 data.mod.us <- upSample(data.mod, data.mod$Attrition, list = FALSE)
+
+
+data.mod.us$Class <- NULL
+
 
 model.full <- glm(Attrition~., data = data.mod, family = binomial("logit"))
 summary(model.full)
@@ -261,14 +269,17 @@ summary(model.reduced.upsampled)
 
 
 ```{r}
-table(data.mod.us$Attrition)
+table(data.mod$Attrition)
+
+print (140 / (140 + 727))
+
 ```
 
 ```{r}
 
 data.mod$predict <- as.factor(ifelse(model.full$fitted.values >0.5, "Yes", "No"))
 
-data.mod.us$predict <- as.factor(ifelse(model.reduced.upsampled$fitted.values >0.5, "Yes", "No"))
+data.mod.us$predict <- as.factor(ifelse(model.reduced.upsampled$fitted.values >0.6, "Yes", "No"))
 
 mytable <- table(data.mod.us$Attrition, data.mod.us$predict)
 rownames(mytable) <- c("Obs (No)", "Obs (Yes)")
@@ -295,12 +306,17 @@ set.seed(1234)
 split.perc = .70
 
 
+
 # DistanceFromHome+JobInvolvement+OverTime+BusinessTravel+NumCompaniesWorked+WorkLifeBalance+EnvironmentSatisfaction+YearsSinceLastPromotion+YearsWithCurrManager+TrainingTimesLastYear
 
 # cols_to_keep = c("DistanceFromHome", "JobInvolvement", "OverTime", "BusinessTravel", "NumCompaniesWorked", "WorkLifeBalance", "EnvironmentSatisfaction", "YearsSinceLastPromotion", "YearsWithCurrManager", "TrainingTimesLastYear", "Attrition")
 
 cols_to_keep = c("YearsSinceLastPromotion", "YearsWithCurrManager", "TrainingTimesLastYear", "DistanceFromHome", "NumCompaniesWorked", "YearsInCurrentRole", "TotalWorkingYears", "JobInvolvement", "OverTime", "BusinessTravel", "Attrition")
 
+
+data.mod.us$predict <- NULL
+
+# data.mod.us
 
 
 df_classify <- data.mod.us %>%
@@ -309,9 +325,6 @@ df_classify <- data.mod.us %>%
   mutate(OverTime = as.integer(OverTime)) %>%
   mutate(BusinessTravel = as.integer(BusinessTravel))
 
-
- #%>%
-  # mutate(EnvironmentSatisfaction = as.integer(EnvironmentSatisfaction))
 
 summary(df_classify)
 
@@ -343,27 +356,11 @@ dim(test) # 939
 ```
 
 
-
-
 ```{r}
 
 # original scale
 classifications = knn(train[,c(1:10)],test[,c(1:10)], train$Attrition, prob = TRUE, k = 1)
 confusionMatrix(table(test$Attrition,classifications), "Yes")
-
-```
-
-```{r}
-rf = randomForest(Attrition~.,  
-                   ntree = 100,
-                   data = data.mod.us)
-plot(rf) 
-
-
-varImp(rf)
-
-confusionMatrix(data=data.mod.us$predict,  
-                reference=data.mod.us$Attrition, "Yes")
 
 ```
 
@@ -400,6 +397,105 @@ plot(seq(1,numks,1),MeanAcc, type = "l")
 
 
 
+### Naive Bayes
+```{r}
+
+library(naivebayes)
+
+data.mod.nb <- data %>%
+  select(-cols_to_remove)
+
+
+set.seed(1234)
+split.perc = .70
+
+train.indices = sample(1:dim(data.mod.nb)[1],round(split.perc * dim(data.mod.nb)[1]))
+
+train = data.mod.nb[train.indices,]
+test = data.mod.nb[-train.indices,]
+
+
+train <- upSample(train, train$Attrition, list = FALSE)
+train$Class <- NULL
+
+
+model.nb.train <- naive_bayes(Attrition ~ ., data = train, laplace = TRUE, usekernel = TRUE)
+
+# p <- predict(model.nb, train, type = 'prob')
+# cbind(p, train)
+
+p1 <- predict(model.nb.train, train)
+p2 <- predict(model.nb.train, test)
+# (tab1 <- table(p1, data.mod.nb$Attrition))
+
+
+confusionMatrix(data=p1,  
+                reference=train$Attrition, "Yes")
+
+
+confusionMatrix(data=p2,  
+                reference=test$Attrition, "Yes")
+
+
+```
+
+
+
+### Random Forrest
+```{r}
+
+data.mod.rf <- data %>%
+  select(-cols_to_remove)
+
+set.seed(1234)
+split.perc = .70
+
+train.indices = sample(1:dim(data.mod.rf)[1],round(split.perc * dim(data.mod.rf)[1]))
+
+train = data.mod.rf[train.indices,]
+test = data.mod.rf[-train.indices,]
+
+
+train <- upSample(train, train$Attrition, list = FALSE)
+train$Class <- NULL
+
+
+model.rf.train <- randomForest(Attrition~.,  
+                   ntree = 500,
+                   data = train,
+                   mtry = 5,
+                   cutoff = c(0.80,1-0.80)
+                  )
+
+print(model.rf.train)
+
+plot(model.rf.train) 
+varImp(model.rf.train)
+
+
+p1.rf <- predict(model.rf.train, train)
+p2.rf <- predict(model.rf.train, test)
+
+
+# table(p2)
+# table(test$Attrition)
+# 
+# head(p2)
+# head(test$Attrition)
+
+confusionMatrix(data=p1.rf,  
+                reference=train$Attrition, "Yes")
+
+
+confusionMatrix(data=p2.rf,  
+                reference=test$Attrition, "Yes")
+
+
+```
+
+
+
+## salary
 
 ### Linear Regression
 
@@ -408,7 +504,13 @@ plot(seq(1,numks,1),MeanAcc, type = "l")
 cols_to_remove <- c("ID", "EmployeeNumber", "EmployeeCount", "StandardHours", "Over18")
 
 data.mod <- data %>%
-  select(-cols_to_remove)
+  select(-cols_to_remove) %>%
+  filter(!row_number() %in% c(753L, 376L, 350L))
+
+## Outliers
+# data[753, ]
+# data[376, ]
+# data[350, ]
 
 lm.model.full <- lm(MonthlyIncome~., data = data.mod)
 summary(lm.model.full)
@@ -420,4 +522,54 @@ summary(lm.model.reduced)
 ```
 
 
+```{r}
+par(mfrow=c(2,2))
+plot(lm.model.reduced)
+```
+
+
+
+```{r}
+library(olsrr)
+ols_plot_resid_lev(lm.model.reduced)
+```
+
+## Comparing Competing Models
+
+The two models were trained and validated on the training dataset using 10-fold cross validation. The table below summarized the performance of the models with RMSE, adjusted $R^2$, and MAE.  These results show that the reduced model produces the best performance.
+
+
+
+```{r, cross-validation}
+## cross validate the full model
+# Set up k-fold cross-validation
+train.control <- trainControl(method = "cv", number = 10)
+
+
+model.full.formula <- MonthlyIncome ~ .
+model.reduced.formula <- MonthlyIncome ~ BusinessTravel+DailyRate+JobLevel+JobRole+TotalWorkingYears
+
+
+# Train the full model
+model.full.cv <- train(model.full.formula, 
+                    data = data.mod,
+                    method = 'lm',
+                    trControl = train.control)
+# print model summary
+model.full.cv
+
+
+## cross validate the reduced model
+# Set up k-fold cross-validation
+train.control <- trainControl(method = "cv", number = 10)
+# Train the model
+model.reduced.cv <- train(model.reduced.formula, 
+                    data = data.mod,
+                    method = 'lm',
+                    trControl = train.control)
+
+# print model summary
+model.reduced.cv
+
+```
 
