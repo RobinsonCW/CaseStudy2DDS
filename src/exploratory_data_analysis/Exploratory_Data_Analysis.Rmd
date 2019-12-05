@@ -23,16 +23,6 @@ library(kableExtra)
 # Correlation Matrix
 library(ggcorrplot)
 library(Hmisc)
-#Lasso
-library(glmnet)
-# Resampling
-library(caret)
-library(DMwR)
-# KNN
-library(class)
-# Random Forrest
-library(randomForest)  
-library(e1071)  
 ```
 
 ## Load the CSV Data
@@ -142,7 +132,7 @@ data.numeric <- data %>%
 summary(data.numeric)
 ```
 
-```{r data-non-numeric}
+```{r data-non-numeric-histograms}
 
 # DistanceFromHome
 # NumCompaniesWorked
@@ -150,12 +140,11 @@ summary(data.numeric)
 # TrainingTimesLastYear
 # YearsAtCompany
 
-ggplot(data=data.numeric, aes(data.numeric$YearsSinceLastPromotion)) + geom_histogram()
+ggplot(data=data.numeric, aes(data.numeric$YearsSinceLastPromotion)) + 
+  geom_histogram()
 
 
 ```
-
-
 
 
 ### Non-Numeric Columns
@@ -170,9 +159,23 @@ colnames(data.non.numeric)
 ```
 
 
-```{r data-attrition}
-data.non.numeric %>%
+```{r data-non-numeric-frequency-table}
+
+gather(data.non.numeric, "Column", "Value") %>%
+  count(Column, Value) %>%
+  group_by(Column) %>%             
+  mutate(Percentage = prop.table(n)) %>%
+  rename(Count = n)
+
+```
+
+
+
+
+```{r data-Attrition}
+data %>%
   count(Attrition, sort = TRUE)
+
 ```
 
 
@@ -185,6 +188,13 @@ data %>%
 data.non.numeric %>%
   count(Department, sort = TRUE)
 ```
+
+
+```{r data-education}
+data.non.numeric %>%
+  count(Education, sort = TRUE)
+```
+
 
 ```{r data-education-field}
 data.non.numeric %>%
@@ -226,8 +236,8 @@ flattenCorrMatrix <- function(cormat, pmat) {
   data.frame(
     row = rownames(cormat)[row(cormat)[ut]],
     column = rownames(cormat)[col(cormat)[ut]],
-    cor  =(cormat)[ut],
-    p = pmat[ut]
+    correlation  =(cormat)[ut],
+    p.value = pmat[ut]
     )
 }
 # See what variables are correlated with each other, p-values
@@ -236,408 +246,14 @@ corDF <- data.frame(flattenCorrMatrix(correlation.matrix$r, correlation.matrix$P
 # Order the correlation matrix to show the highest correlated
 # data.frame(corDF[order(-corDF$cor),])
 
-quantDataModel <- corDF[which(corDF$cor >= 0.5),]
-data.frame(quantDataModel[order(-quantDataModel$cor),])
+quantDataModel <- corDF[which(abs(corDF$correlation) >= 0.5),]
+data.frame(quantDataModel[order(-abs(quantDataModel$cor)),])
 
 ```
 
-```{r}
+```{r corr.plot}
 
-corr <- round(cor(data.numeric), 1)
-ggcorrplot(corr, method = "square", type = "full", lab = TRUE)
-
-```
-
-
-# Analysis Question I
-
-- Attrition
-
-## Logistic Regression
-
-```{r}
-
-cols_to_remove <- c("ID", "EmployeeNumber", "EmployeeCount", "StandardHours", "Over18")
-
-data.mod <- data %>%
-  select(-cols_to_remove)
-
-
-# data.mod.ds <- downSample(data.mod, data.mod$Attrition, list = FALSE)
-
-data.mod.us <- upSample(data.mod, data.mod$Attrition, list = FALSE)
-
-
-data.mod.us$Class <- NULL
-
-
-model.full <- glm(Attrition~., data = data.mod, family = binomial("logit"))
-summary(model.full)
-
-
-model.reduced.upsampled <- glm(Attrition~DistanceFromHome+JobInvolvement+OverTime+BusinessTravel+NumCompaniesWorked+WorkLifeBalance+EnvironmentSatisfaction+YearsSinceLastPromotion+YearsWithCurrManager+TrainingTimesLastYear, data = data.mod.us, family = binomial("logit"))
-summary(model.reduced.upsampled)
-
+correlation.plot <- round(cor(data.numeric), 1)
+ggcorrplot(correlation.plot, method = "square", type = "full", lab = TRUE)
 
 ```
-
-
-
-```{r}
-table(data.mod$Attrition)
-
-print (140 / (140 + 727))
-
-```
-
-```{r}
-
-data.mod$predict <- as.factor(ifelse(model.full$fitted.values >0.5, "Yes", "No"))
-
-data.mod.us$predict <- as.factor(ifelse(model.reduced.upsampled$fitted.values >0.6, "Yes", "No"))
-
-mytable <- table(data.mod.us$Attrition, data.mod.us$predict)
-rownames(mytable) <- c("Obs (No)", "Obs (Yes)")
-colnames(mytable) <- c("Pred (No)","Pred (Yes)")
-mytable
-
-
-```
-
-
-```{r}
-# Confusion matrix
-confusionMatrix(data.mod$Attrition, data.mod$predict, "Yes")
-```
-
-```{r}
-# Confusion matrix
-confusionMatrix(data.mod.us$Attrition, data.mod.us$predict, "Yes")
-```
-
-
-```{r}
-set.seed(1234)
-split.perc = .70
-
-
-
-# DistanceFromHome+JobInvolvement+OverTime+BusinessTravel+NumCompaniesWorked+WorkLifeBalance+EnvironmentSatisfaction+YearsSinceLastPromotion+YearsWithCurrManager+TrainingTimesLastYear
-
-# cols_to_keep = c("DistanceFromHome", "JobInvolvement", "OverTime", "BusinessTravel", "NumCompaniesWorked", "WorkLifeBalance", "EnvironmentSatisfaction", "YearsSinceLastPromotion", "YearsWithCurrManager", "TrainingTimesLastYear", "Attrition")
-
-cols_to_keep = c("YearsSinceLastPromotion", "YearsWithCurrManager", "TrainingTimesLastYear", "DistanceFromHome", "NumCompaniesWorked", "YearsInCurrentRole", "TotalWorkingYears", "JobInvolvement", "OverTime", "BusinessTravel", "Attrition")
-
-
-data.mod.us$predict <- NULL
-
-# data.mod.us
-
-
-df_classify <- data.mod %>%
-  select(cols_to_keep) %>%
-  mutate(JobInvolvement = as.integer(JobInvolvement)) %>%
-  mutate(OverTime = as.integer(OverTime)) %>%
-  mutate(BusinessTravel = as.integer(BusinessTravel))
-
-
-summary(df_classify)
-
-
-# standardize values
-df_classify$YearsSinceLastPromotion = scale(df_classify$YearsSinceLastPromotion)
-df_classify$YearsWithCurrManager = scale(df_classify$YearsWithCurrManager)
-df_classify$TrainingTimesLastYear = scale(df_classify$TrainingTimesLastYear)
-df_classify$DistanceFromHome = scale(df_classify$DistanceFromHome)
-df_classify$NumCompaniesWorked = scale(df_classify$NumCompaniesWorked)
-df_classify$JobInvolvement = scale(df_classify$JobInvolvement)
-df_classify$OverTime = scale(df_classify$OverTime)
-df_classify$BusinessTravel = scale(df_classify$BusinessTravel)
-df_classify$YearsInCurrentRole = scale(df_classify$YearsInCurrentRole)
-df_classify$TotalWorkingYears = scale(df_classify$TotalWorkingYears)
-
-
-train.indices = sample(1:dim(df_classify)[1],round(split.perc * dim(df_classify)[1]))
-
-train = df_classify[train.indices,]
-test = df_classify[-train.indices,]
-
-train <- upSample(train, train$Attrition, list = FALSE)
-train$Class <- NULL
-
-dim(df_classify) # 939
-
-dim(train) # 939
-dim(test) # 939
-
-
-```
-
-
-```{r}
-
-# original scale
-classifications = knn(train[,c(1:10)],test[,c(1:10)], train$Attrition, prob = TRUE, k = 5)
-confusionMatrix(table(test$Attrition,classifications), "Yes")
-
-```
-
-
-
-
-```{r}
-iterations = 100
-numks = 30
-
-
-masterAcc = matrix(nrow = iterations, ncol = numks)
-
-for(j in 1:iterations)
-{
-  train.indices = sample(1:dim(df_classify)[1],round(split.perc * dim(df_classify)[1]))
-  train = df_classify[train.indices,]
-  test = df_classify[-train.indices,]
-  for(i in 1:numks)
-  {
-    classifications = knn(train[,c(1:10)],test[,c(1:10)], train$Attrition, prob = TRUE, k = i)
-    table(test$Attrition,classifications)
-    CM = confusionMatrix(table(test$Attrition,classifications), "Yes")
-    masterAcc[j,i] = CM$overall[1]
-  }
-  
-}
-
-MeanAcc = colMeans(masterAcc)
-
-plot(seq(1,numks,1),MeanAcc, type = "l")
-```
-
-```{r}
-
-
-# data.mod.us
-
-
-data.mod <- data.mod %>%
-  select(cols_to_keep) %>%
-  mutate(JobInvolvement = as.integer(JobInvolvement)) %>%
-  mutate(OverTime = as.integer(OverTime)) %>%
-  mutate(BusinessTravel = as.integer(BusinessTravel))
-
-data.mod$predict <- NULL
-
-summary(data.mod)
-
-# sample.data <- sample_frac(data.mod, 1)
-# 
-# sample.data <- downSample(sample.data, sample.data$top.10, list = FALSE)
-# sample.data$Class <- NULL
-
-set.seed(1234)
-
-train.indices <- createDataPartition(y = data.mod$Attrition,p = 0.70, list = FALSE)
-train <- data.mod[train.indices,]
-test <- data.mod[-train.indices,]
-
-train <- upSample(train, train$Attrition, list = FALSE)
-train$Class <- NULL
-
-
-set.seed(1234)
-ctrl <- trainControl(method="cv")
-knn.model <- train(Attrition ~ ., data = train, method = "knn", trControl = ctrl, preProcess = c("center","scale"), tuneLength = 10)
-
-knn.model
-
-
-knn.predict <- predict(knn.model, newdata = test )
-confusionMatrix(knn.predict, test$Attrition, "Yes")
-
-# table(sample.data$top.10)
-
-# dim(sample.data) # 14800     
-# dim(train) # 10360     
-# dim(test) # 4440 
-```
-
-
-
-### Naive Bayes
-```{r}
-
-library(naivebayes)
-
-data.mod.nb <- data %>%
-  select(-cols_to_remove)
-
-
-set.seed(1234)
-split.perc = .70
-
-train.indices = sample(1:dim(data.mod.nb)[1],round(split.perc * dim(data.mod.nb)[1]))
-
-train = data.mod.nb[train.indices,]
-test = data.mod.nb[-train.indices,]
-
-
-train <- upSample(train, train$Attrition, list = FALSE)
-train$Class <- NULL
-
-
-model.nb.train <- naive_bayes(Attrition ~ ., data = train, laplace = TRUE, usekernel = TRUE)
-
-# p <- predict(model.nb, train, type = 'prob')
-# cbind(p, train)
-
-p1 <- predict(model.nb.train, train)
-p2 <- predict(model.nb.train, test)
-# (tab1 <- table(p1, data.mod.nb$Attrition))
-
-
-confusionMatrix(data=p1,  
-                reference=train$Attrition, "Yes")
-
-
-confusionMatrix(data=p2,  
-                reference=test$Attrition, "Yes")
-
-
-```
-
-
-
-### Random Forrest
-```{r}
-
-data.mod.rf <- data %>%
-  select(-cols_to_remove)
-
-set.seed(1234)
-split.perc = .70
-
-train.indices = sample(1:dim(data.mod.rf)[1],round(split.perc * dim(data.mod.rf)[1]))
-
-train = data.mod.rf[train.indices,]
-test = data.mod.rf[-train.indices,]
-
-
-train <- upSample(train, train$Attrition, list = FALSE)
-train$Class <- NULL
-
-
-model.rf.train <- randomForest(Attrition ~ . ,  
-                   ntree = 500,
-                   data = train,
-                   mtry = 8,
-                   cutoff = c(0.78,1-0.78)
-                  )
-
-print(model.rf.train)
-
-plot(model.rf.train) 
-varImp(model.rf.train)
-
-
-?varImp
-
-
-p1.rf <- predict(model.rf.train, train)
-p2.rf <- predict(model.rf.train, test)
-
-
-# table(p2)
-# table(test$Attrition)
-# 
-# head(p2)
-# head(test$Attrition)
-
-confusionMatrix(data=p1.rf,  
-                reference=train$Attrition, "Yes")
-
-
-confusionMatrix(data=p2.rf,  
-                reference=test$Attrition, "Yes")
-
-
-```
-
-
-
-## salary
-
-### Linear Regression
-
-```{r}
-
-cols_to_remove <- c("ID", "EmployeeNumber", "EmployeeCount", "StandardHours", "Over18")
-
-data.mod <- data %>%
-  select(-cols_to_remove) %>%
-  filter(!row_number() %in% c(753L, 376L, 350L))
-
-## Outliers
-# data[753, ]
-# data[376, ]
-# data[350, ]
-
-lm.model.full <- lm(MonthlyIncome~., data = data.mod)
-summary(lm.model.full)
-
-lm.model.reduced <- lm(MonthlyIncome~BusinessTravel+DailyRate+JobLevel+JobRole+TotalWorkingYears, data = data.mod)
-summary(lm.model.reduced)
-
-
-```
-
-
-```{r}
-par(mfrow=c(2,2))
-plot(lm.model.reduced)
-```
-
-
-
-```{r}
-library(olsrr)
-ols_plot_resid_lev(lm.model.reduced)
-```
-
-## Comparing Competing Models
-
-The two models were trained and validated on the training dataset using 10-fold cross validation. The table below summarized the performance of the models with RMSE, adjusted $R^2$, and MAE.  These results show that the reduced model produces the best performance.
-
-
-
-```{r, cross-validation}
-## cross validate the full model
-# Set up k-fold cross-validation
-train.control <- trainControl(method = "cv", number = 10)
-
-
-model.full.formula <- MonthlyIncome ~ .
-model.reduced.formula <- MonthlyIncome ~ BusinessTravel+DailyRate+JobLevel+JobRole+TotalWorkingYears
-
-
-# Train the full model
-model.full.cv <- train(model.full.formula, 
-                    data = data.mod,
-                    method = 'lm',
-                    trControl = train.control)
-# print model summary
-model.full.cv
-
-
-## cross validate the reduced model
-# Set up k-fold cross-validation
-train.control <- trainControl(method = "cv", number = 10)
-# Train the model
-model.reduced.cv <- train(model.reduced.formula, 
-                    data = data.mod,
-                    method = 'lm',
-                    trControl = train.control)
-
-# print model summary
-model.reduced.cv
-
-```
-
