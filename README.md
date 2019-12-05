@@ -8,8 +8,8 @@ Talent Management case study for predicting employee turnover
 
 ## Analysis Files
 
-* [Talent Management Analysis (html)](http://htmlpreview.github.io/?https://github.com/RobinsonCW/BeerAnalysis/blob/master/src/objectives/Beer_Analysis.html): A paper covering the analysis. 
-* [Talent Management Analysis (Rmd)](https://github.com/RobinsonCW/BeerAnalysis/blob/master/src/objectives/Beer_Analysis.Rmd): An R-markdown file with the analysis.
+* [Talent Management Analysis (html)](http://htmlpreview.github.io/?https://github.com/RobinsonCW/CaseStudy2DDS/blob/master/src/Talent-Management-Analysis.html): A paper covering the analysis. 
+* [Talent Management Analysis (Rmd)](https://github.com/RobinsonCW/CaseStudy2DDS/blob/master/src/Talent%20Management%20Analysis.Rmd): An R-markdown file with the analysis.
 
 
 ## Presentations
