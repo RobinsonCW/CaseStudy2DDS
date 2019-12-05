@@ -176,14 +176,10 @@ prop.table(table(train$Attrition))
 
 library(pROC)
 
-?pROC
+# ?pROC
 
 auc <- roc(test$Attrition, as.integer(p2))
-# print(auc)
 
-# plot(auc, ylim=c(0,1), print.thres=TRUE, main=paste('AUC of Test Set:', round(auc$auc[[1]],2)))
-# abline(h=1,col='green',lwd=2)
-# abline(h=0,col='red',lwd=2)
 
 g <- ggroc(auc, alpha = 0.5, colour = "red", linetype = 2, size = 2) +
   theme_minimal() + 
@@ -191,10 +187,7 @@ g <- ggroc(auc, alpha = 0.5, colour = "red", linetype = 2, size = 2) +
   geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color="darkgrey", linetype="dashed")
   
 
-
 plot(g)
-
-
 
 
 
@@ -210,6 +203,7 @@ confusionMatrix(data=p2,
 ```
 
 ```{r rf-tune}
+
 tuneRF(train[,-2], train[,2],
        stepFactor = 0.5,
        ntreeTry = 150,
@@ -217,49 +211,5 @@ tuneRF(train[,-2], train[,2],
        improve = 0.5
 )
        
-
-# train[, 2]
-```
-
-
-
-```{r pre-train-test-split}
-
-# train <- read.csv("../../../data/pubg_solo_game_types_train_downsampled.csv", stringsAsFactors=FALSE)
-# 
-# test <- read.csv("../../../data/pubg_solo_game_types_test_full.csv", stringsAsFactors=FALSE)
-# 
-# 
-# train <- train %>%
-#   select(-cols_to_remove) %>%
-#   mutate(top.10 = factor(top.10, labels = c("No", "Yes"))) 
-# 
-# 
-# test <- test %>%
-#   select(-cols_to_remove) %>%
-#   mutate(top.10 = factor(top.10, labels = c("No", "Yes"))) 
-# 
-# 
-# model.rf.train <- randomForest(as.factor(top.10) ~ ., data = train, ntree = 300, mtry = 5)
-# 
-# print(model.rf.train)
-# 
-# 
-# p1 <- predict(model.rf.train, train)
-# p2 <- predict(model.rf.train, test)
-# 
-# 
-# print(model.rf.train)
-# plot(model.rf.train) 
-# varImp(model.rf.train)
-# 
-# 
-# confusionMatrix(data=p1,  
-#                 reference=train$top.10, "Yes")
-# 
-# 
-# confusionMatrix(data=p2,  
-#                 reference=test$top.10, "Yes")
-
 ```
 

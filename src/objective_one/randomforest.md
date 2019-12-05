@@ -3,6 +3,18 @@ Random Forest
 Chance Robinson
 12/02/2019
 
+  - [Exploratory Data Analysis](#exploratory-data-analysis)
+      - [Library Imports](#library-imports)
+      - [Load the CSV Data](#load-the-csv-data)
+          - [Convert Integers to Strings](#convert-integers-to-strings)
+          - [Convert Integers to Factors](#convert-integers-to-factors)
+      - [Prepare Dataframe](#prepare-dataframe)
+      - [Random Forrest](#random-forrest)
+      - [Train / Test Split](#train-test-split)
+      - [Random Forest Performance](#random-forest-performance)
+          - [Area Under the Curve](#area-under-the-curve)
+          - [Test](#test)
+
 # Exploratory Data Analysis
 
 ## Library Imports
@@ -11,16 +23,16 @@ Chance Robinson
 library(tidyverse)
 ```
 
-    ## ── Attaching packages ──────────────────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
+    ## -- Attaching packages ----------------------------------------------------------------------------------------------------------- tidyverse 1.2.1 --
 
-    ## ✔ ggplot2 3.2.0     ✔ purrr   0.3.2
-    ## ✔ tibble  2.1.3     ✔ dplyr   0.8.3
-    ## ✔ tidyr   0.8.3     ✔ stringr 1.4.0
-    ## ✔ readr   1.3.1     ✔ forcats 0.4.0
+    ## v ggplot2 3.2.1     v purrr   0.3.3
+    ## v tibble  2.1.3     v dplyr   0.8.3
+    ## v tidyr   1.0.0     v stringr 1.4.0
+    ## v readr   1.3.1     v forcats 0.4.0
 
-    ## ── Conflicts ─────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
-    ## ✖ dplyr::filter() masks stats::filter()
-    ## ✖ dplyr::lag()    masks stats::lag()
+    ## -- Conflicts -------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## x dplyr::filter() masks stats::filter()
+    ## x dplyr::lag()    masks stats::lag()
 
 ``` r
 # Random Forest
@@ -102,34 +114,27 @@ head(data)
     ## 4       24032                  1      Y       No                19
     ## 5       17218                  1      Y      Yes                13
     ## 6        4809                  1      Y       No                21
-    ##   PerformanceRating RelationshipSatisfaction StandardHours
-    ## 1                 3                        3            80
-    ## 2                 3                        1            80
-    ## 3                 3                        3            80
-    ## 4                 3                        3            80
-    ## 5                 3                        3            80
-    ## 6                 4                        3            80
-    ##   StockOptionLevel TotalWorkingYears TrainingTimesLastYear WorkLifeBalance
-    ## 1                1                 8                     3               2
-    ## 2                0                21                     2               4
-    ## 3                0                10                     2               3
-    ## 4                2                14                     3               3
-    ## 5                0                 6                     2               3
-    ## 6                2                 9                     4               2
-    ##   YearsAtCompany YearsInCurrentRole YearsSinceLastPromotion
-    ## 1              5                  2                       0
-    ## 2             20                  7                       4
-    ## 3              2                  2                       2
-    ## 4             14                 10                       5
-    ## 5              6                  3                       1
-    ## 6              9                  7                       1
-    ##   YearsWithCurrManager
-    ## 1                    3
-    ## 2                    9
-    ## 3                    2
-    ## 4                    7
-    ## 5                    3
-    ## 6                    7
+    ##   PerformanceRating RelationshipSatisfaction StandardHours StockOptionLevel
+    ## 1                 3                        3            80                1
+    ## 2                 3                        1            80                0
+    ## 3                 3                        3            80                0
+    ## 4                 3                        3            80                2
+    ## 5                 3                        3            80                0
+    ## 6                 4                        3            80                2
+    ##   TotalWorkingYears TrainingTimesLastYear WorkLifeBalance YearsAtCompany
+    ## 1                 8                     3               2              5
+    ## 2                21                     2               4             20
+    ## 3                10                     2               3              2
+    ## 4                14                     3               3             14
+    ## 5                 6                     2               3              6
+    ## 6                 9                     4               2              9
+    ##   YearsInCurrentRole YearsSinceLastPromotion YearsWithCurrManager
+    ## 1                  2                       0                    3
+    ## 2                  7                       4                    9
+    ## 3                  2                       2                    2
+    ## 4                 10                       5                    7
+    ## 5                  3                       1                    3
+    ## 6                  7                       1                    7
 
 ### Convert Integers to Strings
 
@@ -215,69 +220,61 @@ summary(data.mod)
     ##                               3rd Qu.:14.000   3rd Qu.:4.000  
     ##                               Max.   :29.000   Max.   :5.000  
     ##                                                               
-    ##           EducationField EnvironmentSatisfaction    Gender   
-    ##  Human Resources : 15    Min.   :1.000           Female:354  
-    ##  Life Sciences   :358    1st Qu.:2.000           Male  :516  
-    ##  Marketing       :100    Median :3.000                       
-    ##  Medical         :270    Mean   :2.701                       
-    ##  Other           : 52    3rd Qu.:4.000                       
-    ##  Technical Degree: 75    Max.   :4.000                       
-    ##                                                              
-    ##    HourlyRate     JobInvolvement     JobLevel    
-    ##  Min.   : 30.00   Min.   :1.000   Min.   :1.000  
-    ##  1st Qu.: 48.00   1st Qu.:2.000   1st Qu.:1.000  
-    ##  Median : 66.00   Median :3.000   Median :2.000  
-    ##  Mean   : 65.61   Mean   :2.723   Mean   :2.039  
-    ##  3rd Qu.: 83.00   3rd Qu.:3.000   3rd Qu.:3.000  
-    ##  Max.   :100.00   Max.   :4.000   Max.   :5.000  
-    ##                                                  
-    ##                       JobRole    JobSatisfaction  MaritalStatus
-    ##  Sales Executive          :200   Min.   :1.000   Divorced:191  
-    ##  Research Scientist       :172   1st Qu.:2.000   Married :410  
-    ##  Laboratory Technician    :153   Median :3.000   Single  :269  
-    ##  Manufacturing Director   : 87   Mean   :2.709                 
-    ##  Healthcare Representative: 76   3rd Qu.:4.000                 
-    ##  Sales Representative     : 53   Max.   :4.000                 
-    ##  (Other)                  :129                                 
-    ##  MonthlyIncome    MonthlyRate    NumCompaniesWorked OverTime 
-    ##  Min.   : 1081   Min.   : 2094   Min.   :0.000      No :618  
-    ##  1st Qu.: 2840   1st Qu.: 8092   1st Qu.:1.000      Yes:252  
-    ##  Median : 4946   Median :14074   Median :2.000               
-    ##  Mean   : 6390   Mean   :14326   Mean   :2.728               
-    ##  3rd Qu.: 8182   3rd Qu.:20456   3rd Qu.:4.000               
-    ##  Max.   :19999   Max.   :26997   Max.   :9.000               
-    ##                                                              
-    ##  PercentSalaryHike PerformanceRating RelationshipSatisfaction
-    ##  Min.   :11.0      Min.   :3.000     Min.   :1.000           
-    ##  1st Qu.:12.0      1st Qu.:3.000     1st Qu.:2.000           
-    ##  Median :14.0      Median :3.000     Median :3.000           
-    ##  Mean   :15.2      Mean   :3.152     Mean   :2.707           
-    ##  3rd Qu.:18.0      3rd Qu.:3.000     3rd Qu.:4.000           
-    ##  Max.   :25.0      Max.   :4.000     Max.   :4.000           
-    ##                                                              
-    ##  StockOptionLevel TotalWorkingYears TrainingTimesLastYear WorkLifeBalance
-    ##  Min.   :0.0000   Min.   : 0.00     Min.   :0.000         Min.   :1.000  
-    ##  1st Qu.:0.0000   1st Qu.: 6.00     1st Qu.:2.000         1st Qu.:2.000  
-    ##  Median :1.0000   Median :10.00     Median :3.000         Median :3.000  
-    ##  Mean   :0.7839   Mean   :11.05     Mean   :2.832         Mean   :2.782  
-    ##  3rd Qu.:1.0000   3rd Qu.:15.00     3rd Qu.:3.000         3rd Qu.:3.000  
-    ##  Max.   :3.0000   Max.   :40.00     Max.   :6.000         Max.   :4.000  
-    ##                                                                          
-    ##  YearsAtCompany   YearsInCurrentRole YearsSinceLastPromotion
-    ##  Min.   : 0.000   Min.   : 0.000     Min.   : 0.000         
-    ##  1st Qu.: 3.000   1st Qu.: 2.000     1st Qu.: 0.000         
-    ##  Median : 5.000   Median : 3.000     Median : 1.000         
-    ##  Mean   : 6.962   Mean   : 4.205     Mean   : 2.169         
-    ##  3rd Qu.:10.000   3rd Qu.: 7.000     3rd Qu.: 3.000         
-    ##  Max.   :40.000   Max.   :18.000     Max.   :15.000         
+    ##           EducationField EnvironmentSatisfaction    Gender      HourlyRate    
+    ##  Human Resources : 15    Min.   :1.000           Female:354   Min.   : 30.00  
+    ##  Life Sciences   :358    1st Qu.:2.000           Male  :516   1st Qu.: 48.00  
+    ##  Marketing       :100    Median :3.000                        Median : 66.00  
+    ##  Medical         :270    Mean   :2.701                        Mean   : 65.61  
+    ##  Other           : 52    3rd Qu.:4.000                        3rd Qu.: 83.00  
+    ##  Technical Degree: 75    Max.   :4.000                        Max.   :100.00  
+    ##                                                                               
+    ##  JobInvolvement     JobLevel                          JobRole   
+    ##  Min.   :1.000   Min.   :1.000   Sales Executive          :200  
+    ##  1st Qu.:2.000   1st Qu.:1.000   Research Scientist       :172  
+    ##  Median :3.000   Median :2.000   Laboratory Technician    :153  
+    ##  Mean   :2.723   Mean   :2.039   Manufacturing Director   : 87  
+    ##  3rd Qu.:3.000   3rd Qu.:3.000   Healthcare Representative: 76  
+    ##  Max.   :4.000   Max.   :5.000   Sales Representative     : 53  
+    ##                                  (Other)                  :129  
+    ##  JobSatisfaction  MaritalStatus MonthlyIncome    MonthlyRate   
+    ##  Min.   :1.000   Divorced:191   Min.   : 1081   Min.   : 2094  
+    ##  1st Qu.:2.000   Married :410   1st Qu.: 2840   1st Qu.: 8092  
+    ##  Median :3.000   Single  :269   Median : 4946   Median :14074  
+    ##  Mean   :2.709                  Mean   : 6390   Mean   :14326  
+    ##  3rd Qu.:4.000                  3rd Qu.: 8182   3rd Qu.:20456  
+    ##  Max.   :4.000                  Max.   :19999   Max.   :26997  
+    ##                                                                
+    ##  NumCompaniesWorked OverTime  PercentSalaryHike PerformanceRating
+    ##  Min.   :0.000      No :618   Min.   :11.0      Min.   :3.000    
+    ##  1st Qu.:1.000      Yes:252   1st Qu.:12.0      1st Qu.:3.000    
+    ##  Median :2.000                Median :14.0      Median :3.000    
+    ##  Mean   :2.728                Mean   :15.2      Mean   :3.152    
+    ##  3rd Qu.:4.000                3rd Qu.:18.0      3rd Qu.:3.000    
+    ##  Max.   :9.000                Max.   :25.0      Max.   :4.000    
+    ##                                                                  
+    ##  RelationshipSatisfaction StockOptionLevel TotalWorkingYears
+    ##  Min.   :1.000            Min.   :0.0000   Min.   : 0.00    
+    ##  1st Qu.:2.000            1st Qu.:0.0000   1st Qu.: 6.00    
+    ##  Median :3.000            Median :1.0000   Median :10.00    
+    ##  Mean   :2.707            Mean   :0.7839   Mean   :11.05    
+    ##  3rd Qu.:4.000            3rd Qu.:1.0000   3rd Qu.:15.00    
+    ##  Max.   :4.000            Max.   :3.0000   Max.   :40.00    
     ##                                                             
-    ##  YearsWithCurrManager
-    ##  Min.   : 0.00       
-    ##  1st Qu.: 2.00       
-    ##  Median : 3.00       
-    ##  Mean   : 4.14       
-    ##  3rd Qu.: 7.00       
-    ##  Max.   :17.00       
+    ##  TrainingTimesLastYear WorkLifeBalance YearsAtCompany   YearsInCurrentRole
+    ##  Min.   :0.000         Min.   :1.000   Min.   : 0.000   Min.   : 0.000    
+    ##  1st Qu.:2.000         1st Qu.:2.000   1st Qu.: 3.000   1st Qu.: 2.000    
+    ##  Median :3.000         Median :3.000   Median : 5.000   Median : 3.000    
+    ##  Mean   :2.832         Mean   :2.782   Mean   : 6.962   Mean   : 4.205    
+    ##  3rd Qu.:3.000         3rd Qu.:3.000   3rd Qu.:10.000   3rd Qu.: 7.000    
+    ##  Max.   :6.000         Max.   :4.000   Max.   :40.000   Max.   :18.000    
+    ##                                                                           
+    ##  YearsSinceLastPromotion YearsWithCurrManager
+    ##  Min.   : 0.000          Min.   : 0.00       
+    ##  1st Qu.: 0.000          1st Qu.: 2.00       
+    ##  Median : 1.000          Median : 3.00       
+    ##  Mean   : 2.169          Mean   : 4.14       
+    ##  3rd Qu.: 3.000          3rd Qu.: 7.00       
+    ##  Max.   :15.000          Max.   :17.00       
     ## 
 
 ``` r
@@ -328,55 +325,55 @@ head(train)
     ## 838  34        No     Travel_Rarely       258                  Sales
     ## 318  24        No     Travel_Rarely       771 Research & Development
     ## 424  18        No        Non-Travel      1124 Research & Development
-    ##     DistanceFromHome Education   EducationField EnvironmentSatisfaction
-    ## 250                2         5    Life Sciences                       2
-    ## 636                4         4            Other                       4
-    ## 289               11         2 Technical Degree                       2
-    ## 838               21         4    Life Sciences                       4
-    ## 318                1         2    Life Sciences                       2
-    ## 424                1         3    Life Sciences                       4
-    ##     Gender HourlyRate JobInvolvement JobLevel                   JobRole
-    ## 250 Female         91              3        4                   Manager
-    ## 636   Male         47              2        1     Laboratory Technician
-    ## 289 Female         92              3        3           Sales Executive
-    ## 838   Male         74              4        2           Sales Executive
-    ## 318   Male         45              2        2 Healthcare Representative
-    ## 424 Female         97              3        1     Laboratory Technician
-    ##     JobSatisfaction MaritalStatus MonthlyIncome MonthlyRate
-    ## 250               1       Married         16595        5626
-    ## 636               4       Married          2376       26537
-    ## 289               4       Married          9738       22952
-    ## 838               4        Single          5337       19921
-    ## 318               3        Single          4617       14120
-    ## 424               4        Single          1611       19305
-    ##     NumCompaniesWorked OverTime PercentSalaryHike PerformanceRating
-    ## 250                  7       No                16                 3
-    ## 636                  1       No                13                 3
-    ## 289                  0       No                14                 3
-    ## 838                  1       No                12                 3
-    ## 318                  1       No                12                 3
-    ## 424                  1       No                15                 3
-    ##     RelationshipSatisfaction StockOptionLevel TotalWorkingYears
-    ## 250                        2                1                22
-    ## 636                        2                1                 2
-    ## 289                        3                1                10
-    ## 838                        4                0                10
-    ## 318                        2                0                 4
-    ## 424                        3                0                 0
-    ##     TrainingTimesLastYear WorkLifeBalance YearsAtCompany
-    ## 250                     2               3             18
-    ## 636                     2               4              2
-    ## 289                     6               3              9
-    ## 838                     3               3             10
-    ## 318                     2               2              4
-    ## 424                     5               4              0
-    ##     YearsInCurrentRole YearsSinceLastPromotion YearsWithCurrManager
-    ## 250                 16                      11                    8
-    ## 636                  2                       2                    2
-    ## 289                  7                       2                    8
-    ## 838                  7                       5                    7
-    ## 318                  3                       1                    2
-    ## 424                  0                       0                    0
+    ##     DistanceFromHome Education   EducationField EnvironmentSatisfaction Gender
+    ## 250                2         5    Life Sciences                       2 Female
+    ## 636                4         4            Other                       4   Male
+    ## 289               11         2 Technical Degree                       2 Female
+    ## 838               21         4    Life Sciences                       4   Male
+    ## 318                1         2    Life Sciences                       2   Male
+    ## 424                1         3    Life Sciences                       4 Female
+    ##     HourlyRate JobInvolvement JobLevel                   JobRole
+    ## 250         91              3        4                   Manager
+    ## 636         47              2        1     Laboratory Technician
+    ## 289         92              3        3           Sales Executive
+    ## 838         74              4        2           Sales Executive
+    ## 318         45              2        2 Healthcare Representative
+    ## 424         97              3        1     Laboratory Technician
+    ##     JobSatisfaction MaritalStatus MonthlyIncome MonthlyRate NumCompaniesWorked
+    ## 250               1       Married         16595        5626                  7
+    ## 636               4       Married          2376       26537                  1
+    ## 289               4       Married          9738       22952                  0
+    ## 838               4        Single          5337       19921                  1
+    ## 318               3        Single          4617       14120                  1
+    ## 424               4        Single          1611       19305                  1
+    ##     OverTime PercentSalaryHike PerformanceRating RelationshipSatisfaction
+    ## 250       No                16                 3                        2
+    ## 636       No                13                 3                        2
+    ## 289       No                14                 3                        3
+    ## 838       No                12                 3                        4
+    ## 318       No                12                 3                        2
+    ## 424       No                15                 3                        3
+    ##     StockOptionLevel TotalWorkingYears TrainingTimesLastYear WorkLifeBalance
+    ## 250                1                22                     2               3
+    ## 636                1                 2                     2               4
+    ## 289                1                10                     6               3
+    ## 838                0                10                     3               3
+    ## 318                0                 4                     2               2
+    ## 424                0                 0                     5               4
+    ##     YearsAtCompany YearsInCurrentRole YearsSinceLastPromotion
+    ## 250             18                 16                      11
+    ## 636              2                  2                       2
+    ## 289              9                  7                       2
+    ## 838             10                  7                       5
+    ## 318              4                  3                       1
+    ## 424              0                  0                       0
+    ##     YearsWithCurrManager
+    ## 250                    8
+    ## 636                    2
+    ## 289                    8
+    ## 838                    7
+    ## 318                    2
+    ## 424                    0
 
 ``` r
 # cutoff = c(0.36,1-0.36)
@@ -480,7 +477,7 @@ library(pROC)
     ##     cov, smooth, var
 
 ``` r
-?pROC
+# ?pROC
 
 auc <- roc(test$Attrition, as.integer(p2))
 ```
@@ -490,18 +487,11 @@ auc <- roc(test$Attrition, as.integer(p2))
     ## Setting direction: controls < cases
 
 ``` r
-# print(auc)
-
-# plot(auc, ylim=c(0,1), print.thres=TRUE, main=paste('AUC of Test Set:', round(auc$auc[[1]],2)))
-# abline(h=1,col='green',lwd=2)
-# abline(h=0,col='red',lwd=2)
-
 g <- ggroc(auc, alpha = 0.5, colour = "red", linetype = 2, size = 2) +
   theme_minimal() + 
   ggtitle(paste('AUC of Test Set:', round(auc$auc[[1]],2))) + 
   geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color="darkgrey", linetype="dashed")
   
-
 
 plot(g)
 ```
@@ -566,45 +556,3 @@ tuneRF(train[,-2], train[,2],
     ## 2.OOB     2 0.1603261
     ## 5.OOB     5 0.1576087
     ## 10.OOB   10 0.1494565
-
-``` r
-# train[, 2]
-```
-
-``` r
-# train <- read.csv("../../../data/pubg_solo_game_types_train_downsampled.csv", stringsAsFactors=FALSE)
-# 
-# test <- read.csv("../../../data/pubg_solo_game_types_test_full.csv", stringsAsFactors=FALSE)
-# 
-# 
-# train <- train %>%
-#   select(-cols_to_remove) %>%
-#   mutate(top.10 = factor(top.10, labels = c("No", "Yes"))) 
-# 
-# 
-# test <- test %>%
-#   select(-cols_to_remove) %>%
-#   mutate(top.10 = factor(top.10, labels = c("No", "Yes"))) 
-# 
-# 
-# model.rf.train <- randomForest(as.factor(top.10) ~ ., data = train, ntree = 300, mtry = 5)
-# 
-# print(model.rf.train)
-# 
-# 
-# p1 <- predict(model.rf.train, train)
-# p2 <- predict(model.rf.train, test)
-# 
-# 
-# print(model.rf.train)
-# plot(model.rf.train) 
-# varImp(model.rf.train)
-# 
-# 
-# confusionMatrix(data=p1,  
-#                 reference=train$top.10, "Yes")
-# 
-# 
-# confusionMatrix(data=p2,  
-#                 reference=test$top.10, "Yes")
-```
