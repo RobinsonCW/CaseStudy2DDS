@@ -1,0 +1,221 @@
+---
+title: "Support Vector Machines"
+author: "Chance Robinson"
+date: "12/04/2019"
+output: 
+  github_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exploratory Data Analysis
+
+## Library Imports
+
+
+```{r library-imports, quietely=TRUE, warn.conflicts=FALSE}
+library(tidyverse)
+# Support Vector Machines
+library(e1071)  
+# downSample
+library(caret)
+# ROC Curves
+library(ROCR)
+library(pROC)
+```
+
+
+
+## Load the CSV Data
+
+```{r load-data}
+data <- read.csv("../../data/CaseStudy2-data.csv", stringsAsFactors=TRUE, header = TRUE)
+
+```
+
+
+```{r head-data}
+head(data)
+```
+
+
+### Convert Integers to Strings
+
+* These numeric columns will be converted into strings 
+
+```{r data-integers-to-strings}
+
+data$ID <- as.character(data$ID)
+data$EmployeeNumber <- as.character(data$EmployeeNumber)
+data$EmployeeCount <- as.character(data$EmployeeCount)
+data$StandardHours <- as.character(data$StandardHours)
+data$Over18 <- as.character(data$Over18)
+
+```
+
+
+
+### Convert Integers to Factors
+
+```{r data-integers-to-factors}
+
+data$JobInvolvement <- factor(data$JobInvolvement, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$JobSatisfaction <- factor(data$JobSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$PerformanceRating <- factor(data$PerformanceRating, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Good", "Excellent", "Outstanding"))
+
+data$RelationshipSatisfaction <- factor(data$RelationshipSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$WorkLifeBalance <- factor(data$WorkLifeBalance, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Bad", "Better", "Good", "Best"))
+
+### THIS WAS NOT ACTUALLY PROVIDED ON THE WALL
+data$EnvironmentSatisfaction <- factor(data$EnvironmentSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$StockOptionLevel <- factor(data$StockOptionLevel, ordered = TRUE,
+                              levels = c(0, 1, 2, 3),
+                              labels = c("Zero", "One", "Two", "Three"))
+
+data$JobLevel <- factor(data$JobLevel, ordered = TRUE,
+                              levels = c(1, 2, 3, 4, 5),
+                              labels = c("One", "Two", "Three", "Four", "Five"))
+
+data$Education <- factor(data$Education, ordered = FALSE,
+                              levels = c(1, 2, 3, 4, 5),
+                              labels = c("One", "Two", "Three", "Four", "Five"))
+
+
+
+```
+
+
+## Prepare Dataframe
+
+```{r data-preparation}
+
+cols_to_remove <- c("ID", "EmployeeNumber", "EmployeeCount", "StandardHours", "Over18")
+
+
+data.mod <- data %>%
+  select(-cols_to_remove) %>%
+  mutate(Attrition = factor(Attrition, labels = c("No", "Yes"))) 
+
+summary(data.mod)
+
+# str(data.mod)
+
+```
+
+
+
+## Support Vector Machines
+
+## Train / Test Split
+
+```{r svm-boost-train-test-split}
+
+set.seed(1234)
+
+sample.data <- sample_frac(data.mod, 1)
+
+split.perc = .70
+
+train.indices = sample(1:dim(sample.data)[1],round(split.perc * dim(sample.data)[1]))
+
+train = sample.data[train.indices,]
+test = sample.data[-train.indices,]
+
+# train <- upSample(train, as.factor(train$Attrition), list = FALSE)
+# train$Class <- NULL
+
+library(DMwR)
+train <- SMOTE(Attrition ~ ., train, perc.over = 100, perc.under=200)
+
+
+```
+
+
+```{r svm-boost-model}
+
+sum <- sum(table(test$Attrition))
+wts <- table(test$Attrition) / sum
+
+wts
+
+svm.model <- svm(Attrition ~ ., 
+           data = train,
+           cost = 4,
+           # gamma = 1,
+           class.weights= c("No" = 0.4, "Yes" = 1),
+           scale=TRUE
+           # kernel = "sigmoid"
+           )
+
+
+# ?svm
+
+summary(svm.model)
+
+# obj <- tune.svm(Attrition~., data = train, gamma = 2^(-1:1), cost = 2^(2:4))
+
+# 
+# ?tune
+     
+```
+
+
+
+```{r svm-predict}
+
+prd <- predict(svm.model, test)
+
+```
+
+
+### Test
+
+```{r svm-performance-test}
+
+confusionMatrix(data=prd,  
+                reference=test$Attrition, "Yes")
+
+
+```
+
+
+### Area Under the Curve
+
+```{r svm-auc-plot-test}
+
+# ?pROC
+
+auc <- roc(as.integer(test$Attrition), as.integer(prd))
+
+
+g <- ggroc(auc, alpha = 0.5, colour = "red", linetype = 2, size = 2) +
+  theme_minimal() + 
+  ggtitle(paste('AUC of Test Set:', round(auc$auc[[1]],4))) + 
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color="darkgrey", linetype="dashed")
+  
+
+plot(g)
+
+
+
+```
+
