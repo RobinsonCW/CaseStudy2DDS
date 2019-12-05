@@ -142,6 +142,21 @@ data.numeric <- data %>%
 summary(data.numeric)
 ```
 
+```{r data-non-numeric}
+
+# DistanceFromHome
+# NumCompaniesWorked
+# TotalWorkingYears
+# TrainingTimesLastYear
+# YearsAtCompany
+
+ggplot(data=data.numeric, aes(data.numeric$YearsSinceLastPromotion)) + geom_histogram()
+
+
+```
+
+
+
 
 ### Non-Numeric Columns
 
@@ -319,7 +334,7 @@ data.mod.us$predict <- NULL
 # data.mod.us
 
 
-df_classify <- data.mod.us %>%
+df_classify <- data.mod %>%
   select(cols_to_keep) %>%
   mutate(JobInvolvement = as.integer(JobInvolvement)) %>%
   mutate(OverTime = as.integer(OverTime)) %>%
@@ -347,6 +362,9 @@ train.indices = sample(1:dim(df_classify)[1],round(split.perc * dim(df_classify)
 train = df_classify[train.indices,]
 test = df_classify[-train.indices,]
 
+train <- upSample(train, train$Attrition, list = FALSE)
+train$Class <- NULL
+
 dim(df_classify) # 939
 
 dim(train) # 939
@@ -359,7 +377,7 @@ dim(test) # 939
 ```{r}
 
 # original scale
-classifications = knn(train[,c(1:10)],test[,c(1:10)], train$Attrition, prob = TRUE, k = 1)
+classifications = knn(train[,c(1:10)],test[,c(1:10)], train$Attrition, prob = TRUE, k = 5)
 confusionMatrix(table(test$Attrition,classifications), "Yes")
 
 ```
@@ -394,6 +412,53 @@ MeanAcc = colMeans(masterAcc)
 plot(seq(1,numks,1),MeanAcc, type = "l")
 ```
 
+```{r}
+
+
+# data.mod.us
+
+
+data.mod <- data.mod %>%
+  select(cols_to_keep) %>%
+  mutate(JobInvolvement = as.integer(JobInvolvement)) %>%
+  mutate(OverTime = as.integer(OverTime)) %>%
+  mutate(BusinessTravel = as.integer(BusinessTravel))
+
+data.mod$predict <- NULL
+
+summary(data.mod)
+
+# sample.data <- sample_frac(data.mod, 1)
+# 
+# sample.data <- downSample(sample.data, sample.data$top.10, list = FALSE)
+# sample.data$Class <- NULL
+
+set.seed(1234)
+
+train.indices <- createDataPartition(y = data.mod$Attrition,p = 0.70, list = FALSE)
+train <- data.mod[train.indices,]
+test <- data.mod[-train.indices,]
+
+train <- upSample(train, train$Attrition, list = FALSE)
+train$Class <- NULL
+
+
+set.seed(1234)
+ctrl <- trainControl(method="cv")
+knn.model <- train(Attrition ~ ., data = train, method = "knn", trControl = ctrl, preProcess = c("center","scale"), tuneLength = 10)
+
+knn.model
+
+
+knn.predict <- predict(knn.model, newdata = test )
+confusionMatrix(knn.predict, test$Attrition, "Yes")
+
+# table(sample.data$top.10)
+
+# dim(sample.data) # 14800     
+# dim(train) # 10360     
+# dim(test) # 4440 
+```
 
 
 
@@ -460,17 +525,20 @@ train <- upSample(train, train$Attrition, list = FALSE)
 train$Class <- NULL
 
 
-model.rf.train <- randomForest(Attrition~.,  
+model.rf.train <- randomForest(Attrition ~ . ,  
                    ntree = 500,
                    data = train,
-                   mtry = 5,
-                   cutoff = c(0.80,1-0.80)
+                   mtry = 8,
+                   cutoff = c(0.78,1-0.78)
                   )
 
 print(model.rf.train)
 
 plot(model.rf.train) 
 varImp(model.rf.train)
+
+
+?varImp
 
 
 p1.rf <- predict(model.rf.train, train)

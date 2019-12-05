@@ -1,0 +1,265 @@
+---
+title: "Random Forest"
+author: "Chance Robinson"
+date: "12/02/2019"
+output: 
+  github_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exploratory Data Analysis
+
+## Library Imports
+
+
+```{r library-imports, quietely=TRUE, warn.conflicts=FALSE}
+library(tidyverse)
+# Random Forest
+library(randomForest)  
+library(e1071)  
+# downSample
+library(caret)
+```
+
+
+
+## Load the CSV Data
+
+```{r load-data}
+data <- read.csv("../../data/CaseStudy2-data.csv", stringsAsFactors=TRUE, header = TRUE)
+
+```
+
+
+```{r head-data}
+head(data)
+```
+
+### Convert Integers to Strings
+
+* These numeric columns will be converted into strings 
+
+```{r data-integers-to-strings}
+
+data$ID <- as.character(data$ID)
+data$EmployeeNumber <- as.character(data$EmployeeNumber)
+data$EmployeeCount <- as.character(data$EmployeeCount)
+data$StandardHours <- as.character(data$StandardHours)
+data$Over18 <- as.character(data$Over18)
+
+```
+
+
+### Convert Integers to Factors
+
+```{r data-integers-to-factors}
+
+# data$JobInvolvement <- factor(data$JobInvolvement, ordered = TRUE,
+#                               levels = c(1, 2, 3, 4),
+#                               labels = c("Low", "Medium", "High", "Very High"))
+# 
+# data$JobSatisfaction <- factor(data$JobSatisfaction, ordered = TRUE,
+#                               levels = c(1, 2, 3, 4),
+#                               labels = c("Low", "Medium", "High", "Very High"))
+# 
+# data$PerformanceRating <- factor(data$PerformanceRating, ordered = TRUE,
+#                               levels = c(1, 2, 3, 4),
+#                               labels = c("Low", "Good", "Excellent", "Outstanding"))
+# 
+# data$RelationshipSatisfaction <- factor(data$RelationshipSatisfaction, ordered = TRUE,
+#                               levels = c(1, 2, 3, 4),
+#                               labels = c("Low", "Medium", "High", "Very High"))
+# 
+# data$WorkLifeBalance <- factor(data$WorkLifeBalance, ordered = TRUE,
+#                               levels = c(1, 2, 3, 4),
+#                               labels = c("Bad", "Better", "Good", "Best"))
+# 
+# ### THIS WAS NOT ACTUALLY PROVIDED ON THE WALL
+# data$EnvironmentSatisfaction <- factor(data$EnvironmentSatisfaction, ordered = TRUE,
+#                               levels = c(1, 2, 3, 4),
+#                               labels = c("Low", "Medium", "High", "Very High"))
+# 
+# data$StockOptionLevel <- factor(data$StockOptionLevel, ordered = TRUE,
+#                               levels = c(0, 1, 2, 3),
+#                               labels = c("Zero", "One", "Two", "Three"))
+# 
+# data$JobLevel <- factor(data$JobLevel, ordered = TRUE,
+#                               levels = c(1, 2, 3, 4, 5),
+#                               labels = c("One", "Two", "Three", "Four", "Five"))
+# 
+# data$Education <- factor(data$Education, ordered = FALSE,
+#                               levels = c(1, 2, 3, 4, 5),
+#                               labels = c("One", "Two", "Three", "Four", "Five"))
+
+
+```
+
+
+## Prepare Dataframe
+
+```{r data-preparation}
+
+cols_to_remove <- c("ID", "EmployeeNumber", "EmployeeCount", "StandardHours", "Over18")
+
+
+data.mod <- data %>%
+  select(-cols_to_remove) %>%
+  mutate(Attrition = factor(Attrition, labels = c("No", "Yes"))) 
+
+summary(data.mod)
+
+# str(data.mod)
+
+```
+
+
+## Random Forrest
+
+
+## Train / Test Split
+
+```{r rf-train-test-split}
+
+set.seed(1234)
+
+split.perc = .70
+
+train.indices = sample(1:dim(data.mod)[1],round(split.perc * dim(data.mod)[1]))
+
+train = data.mod[train.indices,]
+test = data.mod[-train.indices,]
+
+# UPSAMPLING
+# train <- upSample(train, train$Attrition, list = FALSE)
+# train$Class <- NULL
+
+library(DMwR)
+train <- SMOTE(Attrition ~ ., train, perc.over = 100, perc.under=200)
+
+head(train)
+
+# cutoff = c(0.36,1-0.36)
+
+model.rf.train <- randomForest(Attrition ~ ., 
+                               data = train, 
+                               ntree = 150, 
+                               mtry = 10, 
+                               cutoff = c(0.55,1-0.55)
+                               )
+
+print(model.rf.train)
+
+
+p1 <- predict(model.rf.train, train, type="response")
+p2 <- predict(model.rf.train, test, type="response")
+
+
+plot(model.rf.train) 
+varImp(model.rf.train)
+
+
+# head(train)
+
+```
+
+
+## Random Forest Performance
+
+### Area Under the Curve
+```{r rf-auc-plot-test}
+
+prop.table(table(train$Attrition))
+
+library(pROC)
+
+?pROC
+
+auc <- roc(test$Attrition, as.integer(p2))
+# print(auc)
+
+# plot(auc, ylim=c(0,1), print.thres=TRUE, main=paste('AUC of Test Set:', round(auc$auc[[1]],2)))
+# abline(h=1,col='green',lwd=2)
+# abline(h=0,col='red',lwd=2)
+
+g <- ggroc(auc, alpha = 0.5, colour = "red", linetype = 2, size = 2) +
+  theme_minimal() + 
+  ggtitle(paste('AUC of Test Set:', round(auc$auc[[1]],2))) + 
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color="darkgrey", linetype="dashed")
+  
+
+
+plot(g)
+
+
+
+
+
+```
+
+### Test
+```{r rf-performance-test}
+
+
+confusionMatrix(data=p2,  
+                reference=test$Attrition, "Yes")
+
+```
+
+```{r rf-tune}
+tuneRF(train[,-2], train[,2],
+       stepFactor = 0.5,
+       ntreeTry = 150,
+       trace = TRUE,
+       improve = 0.5
+)
+       
+
+# train[, 2]
+```
+
+
+
+```{r pre-train-test-split}
+
+# train <- read.csv("../../../data/pubg_solo_game_types_train_downsampled.csv", stringsAsFactors=FALSE)
+# 
+# test <- read.csv("../../../data/pubg_solo_game_types_test_full.csv", stringsAsFactors=FALSE)
+# 
+# 
+# train <- train %>%
+#   select(-cols_to_remove) %>%
+#   mutate(top.10 = factor(top.10, labels = c("No", "Yes"))) 
+# 
+# 
+# test <- test %>%
+#   select(-cols_to_remove) %>%
+#   mutate(top.10 = factor(top.10, labels = c("No", "Yes"))) 
+# 
+# 
+# model.rf.train <- randomForest(as.factor(top.10) ~ ., data = train, ntree = 300, mtry = 5)
+# 
+# print(model.rf.train)
+# 
+# 
+# p1 <- predict(model.rf.train, train)
+# p2 <- predict(model.rf.train, test)
+# 
+# 
+# print(model.rf.train)
+# plot(model.rf.train) 
+# varImp(model.rf.train)
+# 
+# 
+# confusionMatrix(data=p1,  
+#                 reference=train$top.10, "Yes")
+# 
+# 
+# confusionMatrix(data=p2,  
+#                 reference=test$top.10, "Yes")
+
+```
+
