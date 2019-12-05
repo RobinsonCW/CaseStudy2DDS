@@ -1,0 +1,280 @@
+---
+title: "Random Forest"
+author: "Chance Robinson"
+date: "12/02/2019"
+output: 
+  github_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exploratory Data Analysis
+
+## Library Imports
+
+
+```{r library-imports, quietely=TRUE, warn.conflicts=FALSE}
+library(tidyverse)
+# Gradient Boosing
+library(xgboost)  
+library(magrittr)
+library(Matrix)
+# downSample
+library(caret)
+# ROC Curves
+library(ROCR)
+library(pROC)
+```
+
+
+
+## Load the CSV Data
+
+```{r load-data}
+data <- read.csv("../../data/CaseStudy2-data.csv", stringsAsFactors=TRUE, header = TRUE)
+
+```
+
+
+```{r head-data}
+head(data)
+```
+
+### Convert Integers to Strings
+
+* These numeric columns will be converted into strings 
+
+```{r data-integers-to-strings}
+
+data$ID <- as.character(data$ID)
+data$EmployeeNumber <- as.character(data$EmployeeNumber)
+data$EmployeeCount <- as.character(data$EmployeeCount)
+data$StandardHours <- as.character(data$StandardHours)
+data$Over18 <- as.character(data$Over18)
+
+```
+
+
+### Convert Integers to Factors
+
+```{r data-integers-to-factors}
+
+data$JobInvolvement <- factor(data$JobInvolvement, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$JobSatisfaction <- factor(data$JobSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$PerformanceRating <- factor(data$PerformanceRating, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Good", "Excellent", "Outstanding"))
+
+data$RelationshipSatisfaction <- factor(data$RelationshipSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$WorkLifeBalance <- factor(data$WorkLifeBalance, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Bad", "Better", "Good", "Best"))
+
+### THIS WAS NOT ACTUALLY PROVIDED ON THE WALL
+data$EnvironmentSatisfaction <- factor(data$EnvironmentSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$StockOptionLevel <- factor(data$StockOptionLevel, ordered = TRUE,
+                              levels = c(0, 1, 2, 3),
+                              labels = c("Zero", "One", "Two", "Three"))
+
+data$JobLevel <- factor(data$JobLevel, ordered = TRUE,
+                              levels = c(1, 2, 3, 4, 5),
+                              labels = c("One", "Two", "Three", "Four", "Five"))
+
+data$Education <- factor(data$Education, ordered = FALSE,
+                              levels = c(1, 2, 3, 4, 5),
+                              labels = c("One", "Two", "Three", "Four", "Five"))
+
+
+```
+
+
+## Prepare Dataframe
+
+```{r data-preparation}
+
+cols_to_remove <- c("ID", "EmployeeNumber", "EmployeeCount", "StandardHours", "Over18")
+
+
+data.mod <- data %>%
+  select(-cols_to_remove) %>%
+   mutate(Attrition = ifelse(Attrition == "No",0,1)) %>%
+   mutate(Attrition = factor(Attrition, labels = c("0", "1"))) 
+
+summary(data.mod)
+
+# str(data.mod)
+
+```
+
+
+## XGBoost
+
+
+## Train / Test Split
+
+```{r xgb-train-test-split}
+
+set.seed(1234)
+
+split.perc = .70
+
+train.indices = sample(1:dim(data.mod)[1],round(split.perc * dim(data.mod)[1]))
+
+train = data.mod[train.indices,]
+test = data.mod[-train.indices,]
+
+# UPSAMPLING
+train <- upSample(train, train$Attrition, list = FALSE)
+train$Class <- NULL
+
+# library(DMwR)
+# train <- SMOTE(Attrition ~ ., train, perc.over = 100, perc.under=200)
+
+head(train)
+
+
+```
+
+
+```{r xb-boost-create-matrix}
+
+trainm <- sparse.model.matrix(Attrition ~ ., data = train)
+# trainm
+train_label <- train[, "Attrition"]
+train_label <- as.numeric(train_label)-1
+
+
+train_matrix <- xgb.DMatrix(data = as.matrix(trainm), label = train_label)
+
+# ?xgb.DMatrix
+testm <- sparse.model.matrix(Attrition ~ ., data = test)
+# trainm
+test_label <- test[, "Attrition"]
+test_label <- as.numeric(test_label)-1
+
+# train_label
+test_matrix <- xgb.DMatrix(data = as.matrix(testm), label = test_label)
+
+```
+
+
+```{r xb-boost-parameters}
+
+nc <- length(unique(train_label))
+xgb_params <- list("objective" = "binary:logistic",
+                  "eval_metric" = "auc")
+
+watchlist <- list(train = train_matrix, test = test_matrix)
+
+```
+
+
+```{r xb-boost-model}
+
+bst_model <- xgb.train(params = xgb_params,
+                       data = train_matrix,
+                       nrounds = 100,
+                       watchlist = watchlist,
+                       scale_pos_weight = 6,
+                       eta = 1,
+                       max.depth = 16,
+                       gamma = 6,
+                       colsample_bytree = .9,
+                       subsample = 0.7,
+                       missing = NA,
+                       seed = 1234
+                       )
+
+
+# bst_model <- xgboost(data = train_matrix, label = train_label, nround = 50, objective = "binary:logistic", eval_metric = "auc")
+# print(bst_model)
+
+prd <- predict(bst_model, test_matrix)
+head(prd)
+
+e <- data.frame(bst_model$evaluation_log)
+head(e)
+
+plot(e$iter, e$train_auc, col = "blue")
+lines(e$iter, e$test_auc, col = "red")
+
+max(e$test_auc)
+
+e[e$test_auc ==  0.78795, ]
+
+# # Feature importance
+imp <- xgb.importance(colnames(train_matrix), model = bst_model)
+# print(imp)
+xgb.plot.importance(imp)
+
+```
+
+## Predict
+
+```{r xb-boost-predict}
+
+p <- predict(bst_model, newdata = test_matrix)
+
+
+# pred <- matrix(p, nrow = 1, ncol = length(p) ) %>%
+#   t() %>%
+#   data.frame() %>%
+#   mutate(label = test_label, max_prob = max.col(., "last")-1)
+
+```
+
+
+### Test
+```{r xgb-performance-test}
+p <- as.factor(ifelse(p > 0.5, "1", "0"))
+head(p)
+
+confusionMatrix(data=as.factor(p),  
+                reference=as.factor(test_label), "1")
+```
+
+
+
+
+## XGBoost Performance
+
+### Area Under the Curve
+```{r xgb-auc-plot-test}
+
+prop.table(table(train$Attrition))
+
+library(pROC)
+
+# ?pROC
+
+auc <- roc(test$Attrition, as.integer(p))
+
+
+g <- ggroc(auc, alpha = 0.5, colour = "red", linetype = 2, size = 2) +
+  theme_minimal() + 
+  ggtitle(paste('AUC of Test Set:', round(auc$auc[[1]],2))) + 
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color="darkgrey", linetype="dashed")
+  
+
+plot(g)
+
+
+
+```
+
+
