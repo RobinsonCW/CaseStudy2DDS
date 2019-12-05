@@ -49,6 +49,9 @@ library(caret)
 library(ROCR)
 library(pROC)
 
+# outlier and leverage plots
+library(olsrr)
+
 ```
 
 ## Load the CSV Data
@@ -253,7 +256,7 @@ ggcorrplot(correlation.plot, method = "square", type = "full", lab = TRUE)
 
 # Objective I
 
-Model Comparisons for Attrition
+Model Comparisons for Attrition classification
 
 ## KNN
 
@@ -696,6 +699,229 @@ plot(g)
        
 ```
 
+
+# Objective II
+
+Salary Predictions
+
+
+## Multiple Linear Regression
+
+### Load the CSV Data
+
+```{r load-data-linear-regression}
+data <- read.csv("../data/CaseStudy2-data.csv", stringsAsFactors=TRUE, header = TRUE)
+
+```
+
+
+```{r data-integers-to-strings-linear-regression}
+
+data$ID <- as.character(data$ID)
+data$EmployeeNumber <- as.character(data$EmployeeNumber)
+data$EmployeeCount <- as.character(data$EmployeeCount)
+data$StandardHours <- as.character(data$StandardHours)
+data$Over18 <- as.character(data$Over18)
+
+```
+
+
+### Convert Integers to Factors
+
+```{r data-integers-to-factors-linear-regression}
+
+data$JobInvolvement <- factor(data$JobInvolvement, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$JobSatisfaction <- factor(data$JobSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$PerformanceRating <- factor(data$PerformanceRating, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Good", "Excellent", "Outstanding"))
+
+data$RelationshipSatisfaction <- factor(data$RelationshipSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$WorkLifeBalance <- factor(data$WorkLifeBalance, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Bad", "Better", "Good", "Best"))
+
+### THIS WAS NOT ACTUALLY PROVIDED ON THE WALL
+data$EnvironmentSatisfaction <- factor(data$EnvironmentSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$StockOptionLevel <- factor(data$StockOptionLevel, ordered = TRUE,
+                              levels = c(0, 1, 2, 3),
+                              labels = c("Zero", "One", "Two", "Three"))
+
+data$JobLevel <- factor(data$JobLevel, ordered = TRUE,
+                              levels = c(1, 2, 3, 4, 5),
+                              labels = c("One", "Two", "Three", "Four", "Five"))
+
+data$Education <- factor(data$Education, ordered = FALSE,
+                              levels = c(1, 2, 3, 4, 5),
+                              labels = c("One", "Two", "Three", "Four", "Five"))
+
+
+
+```
+
+## Prepare Dataframe
+
+```{r data-preparation-linear-regression}
+
+
+cols_to_remove <- c("ID", "EmployeeNumber", "EmployeeCount", "StandardHours", "Over18")
+
+
+data.mod <- data %>%
+  select(-cols_to_remove) %>%
+  mutate(Attrition = factor(Attrition, labels = c("No", "Yes"))) %>%
+  filter(!row_number() %in% c(753L, 376L, 350L)) # remove outliers
+
+# summary(data.mod)
+
+```
+
+
+
+### Linear Regression
+
+## Train / Test Split
+
+```{r linear-regression-train-test-split}
+
+set.seed(1234)
+
+sample.data <- sample_frac(data.mod, 1)
+
+split.perc = .70
+
+train.indices = sample(1:dim(sample.data)[1],round(split.perc * dim(sample.data)[1]))
+
+train = sample.data[train.indices,]
+test = sample.data[-train.indices,]
+
+
+```
+
+
+```{r linear-regression-model-full}
+
+## Outliers
+# data[753, ]
+# data[376, ]
+# data[350, ]
+
+lm.model.full <- lm(MonthlyIncome~., data = train)
+summary(lm.model.full)
+
+     
+```
+
+
+```{r linear-regression-model-reduced}
+
+
+lm.model.reduced <- lm(MonthlyIncome~BusinessTravel+DailyRate+JobLevel+JobRole+TotalWorkingYears, data = train)
+summary(lm.model.reduced)
+
+
+     
+```
+
+
+
+```{r linear-regression-residual-plots, fig.align = "center", message=FALSE, error=FALSE, warning=FALSE}
+
+par(mfrow=c(2,2))
+plot(lm.model.reduced)
+
+```
+
+
+### Test
+
+```{r linear-regression-outlier-leverage-plot, fig.align = "center", message=FALSE, error=FALSE, warning=FALSE}
+
+ols_plot_resid_lev(lm.model.reduced)
+
+```
+
+
+### Outliers
+
+```{r linear-regression-outliers}
+
+# Outliers
+kable(data[c(753, 376, 350), ]) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+
+
+```
+
+
+
+### Performance Metrics
+
+```{r linear-regression-performance}
+
+## cross validate the full model
+# Set up k-fold cross-validation
+train.control <- trainControl(method = "cv", number = 10)
+
+
+model.full.formula <- MonthlyIncome ~ .
+model.reduced.formula <- MonthlyIncome ~ BusinessTravel+DailyRate+JobLevel+JobRole+TotalWorkingYears
+
+
+# # Train the full model
+# model.full.cv <- train(model.full.formula, 
+#                     data = data.mod,
+#                     method = 'lm',
+#                     trControl = train.control)
+# # print model summary
+# model.full.cv
+# 
+# 
+# ## cross validate the reduced model
+# # Set up k-fold cross-validation
+# train.control <- trainControl(method = "cv", number = 10)
+# # Train the model
+# model.reduced.cv <- train(model.reduced.formula, 
+#                     data = data.mod,
+#                     method = 'lm',
+#                     trControl = train.control)
+# 
+# # print model summary
+# model.reduced.cv
+
+
+
+train.model.reduced.cv <- train(model.reduced.formula, 
+                    data = train,
+                    method = 'lm',
+                    trControl = train.control)
+
+# print model summary
+train.model.reduced.cv
+
+# Train the model
+test.model.reduced.cv <- train(model.reduced.formula, 
+                    data = test,
+                    method = 'lm',
+                    trControl = train.control)
+
+# print model summary
+test.model.reduced.cv
+
+
+```
 
 
 
