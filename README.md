@@ -26,7 +26,7 @@ The dataset [readme](https://github.com/RobinsonCW/BeerAnalysis/blob/master/data
 
 ## Codebook
 
-The [Codebook](https://github.com/RobinsonCW/BeerAnalysis/blob/master/CodeBook.md) provides additional details regarding the session information of the environment.
+The [Codebook](https://github.com/RobinsonCW/CaseStudy2DDS/blob/master/CodeBook.md) provides additional details regarding the session information of the environment.
 
 
 
