@@ -14,8 +14,8 @@ Talent Management case study for predicting employee turnover
 
 ## Presentations
 
-* [Talent Management Analysis Presentation (Power Point)](https://github.com/RobinsonCW/BeerAnalysis/blob/master/presentation/DS6306_Proj1_EDA_Presentation.pptx): A power point presentation covering the questions of interest from our exploratory data analysis.
-* [Talent Management Analysis (Power Point)](https://github.com/RobinsonCW/BeerAnalysis/blob/master/presentation/DS6306_Proj1_Final_Presentation.pptx): A power point presentation covering the questions of interest from our exploratory data analysis as well as the conclusion with additional insights.
+* [Talent Management Analysis Presentation (Power Point)](https://github.com/RobinsonCW/CaseStudy2DDS/blob/master/presentations/DS6306_Proj2_Final_Presentation.pptx): A power point presentation covering the findings of this case study.
+
 
 
 ## Data
@@ -38,5 +38,6 @@ The [Codebook](https://github.com/RobinsonCW/BeerAnalysis/blob/master/CodeBook.m
     ├── src                                 # Primary analysis files
     |    ├── exploratory_data_analysis      # R-markdown files for EDA
     |    ├── objectives                     # R-markdown files for primary analysis questions
+    ├── presentation                        # Presentation from the Case Study
     ├── CodeBook.md                         # Session information regarding the environment
     ├── LICENSE                             # All code and analysis is licensed under the MIT license.
