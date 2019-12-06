@@ -14,6 +14,13 @@ Chance Robinson
           - [Test](#test)
           - [Outliers](#outliers)
           - [Performance Metrics](#performance-metrics)
+          - [Convert Integers to
+            Strings](#convert-integers-to-strings-1)
+          - [Convert Integers to
+            Factors](#convert-integers-to-factors-1)
+      - [Prepare Dataframe](#prepare-dataframe-1)
+          - [Make prediction](#make-prediction)
+          - [Export competition csv](#export-competition-csv)
 
 # Exploratory Data Analysis
 
@@ -23,14 +30,14 @@ Chance Robinson
 library(tidyverse)
 ```
 
-    ## -- Attaching packages ----------------------------------------------------------------------------------------------------------- tidyverse 1.2.1 --
+    ## -- Attaching packages --------------------------------------------------------------------------------------------------------------------------------- tidyverse 1.2.1 --
 
     ## v ggplot2 3.2.1     v purrr   0.3.3
     ## v tibble  2.1.3     v dplyr   0.8.3
     ## v tidyr   1.0.0     v stringr 1.4.0
     ## v readr   1.3.1     v forcats 0.4.0
 
-    ## -- Conflicts -------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## -- Conflicts ------------------------------------------------------------------------------------------------------------------------------------ tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
@@ -559,3 +566,246 @@ test.model.reduced.cv
     ##   968.4481  0.9451278  753.2718
     ## 
     ## Tuning parameter 'intercept' was held constant at a value of TRUE
+
+``` r
+library(readxl)
+data <- read_excel("../../data/CaseStudy2CompSet No Salary.xlsx")
+```
+
+``` r
+head(data)
+```
+
+    ## # A tibble: 6 x 35
+    ##      ID   Age Attrition BusinessTravel DailyRate Department DistanceFromHome
+    ##   <dbl> <dbl> <chr>     <chr>              <dbl> <chr>                 <dbl>
+    ## 1   871    43 No        Travel_Freque~      1422 Sales                     2
+    ## 2   872    33 No        Travel_Rarely        461 Research ~               13
+    ## 3   873    55 Yes       Travel_Rarely        267 Sales                    13
+    ## 4   874    36 No        Non-Travel          1351 Research ~                9
+    ## 5   875    27 No        Travel_Rarely       1302 Research ~               19
+    ## 6   876    39 Yes       Travel_Rarely        895 Sales                     5
+    ## # ... with 28 more variables: Education <dbl>, EducationField <chr>,
+    ## #   EmployeeCount <dbl>, EmployeeNumber <dbl>, EnvironmentSatisfaction <dbl>,
+    ## #   Gender <chr>, HourlyRate <dbl>, JobInvolvement <dbl>, JobLevel <dbl>,
+    ## #   JobRole <chr>, JobSatisfaction <dbl>, MaritalStatus <chr>,
+    ## #   MonthlyRate <dbl>, NumCompaniesWorked <dbl>, Over18 <chr>, OverTime <chr>,
+    ## #   PercentSalaryHike <dbl>, PerformanceRating <dbl>,
+    ## #   RelationshipSatisfaction <dbl>, StandardHours <dbl>,
+    ## #   StockOptionLevel <dbl>, TotalWorkingYears <dbl>,
+    ## #   TrainingTimesLastYear <dbl>, WorkLifeBalance <dbl>, YearsAtCompany <dbl>,
+    ## #   YearsInCurrentRole <dbl>, YearsSinceLastPromotion <dbl>,
+    ## #   YearsWithCurrManager <dbl>
+
+### Convert Integers to Strings
+
+``` r
+data$ID <- as.character(data$ID)
+data$EmployeeNumber <- as.character(data$EmployeeNumber)
+data$EmployeeCount <- as.character(data$EmployeeCount)
+data$StandardHours <- as.character(data$StandardHours)
+data$Over18 <- as.character(data$Over18)
+
+
+data$Attrition <- factor(data$Attrition)
+data$BusinessTravel <- factor(data$BusinessTravel)
+data$Department <- factor(data$Department)
+data$Gender <- factor(data$Gender)
+data$EducationField <- factor(data$EducationField)
+data$JobRole <- factor(data$JobRole)
+data$MaritalStatus <- factor(data$MaritalStatus)
+data$OverTime <- factor(data$OverTime)
+
+head(data)
+```
+
+    ## # A tibble: 6 x 35
+    ##   ID      Age Attrition BusinessTravel DailyRate Department DistanceFromHome
+    ##   <chr> <dbl> <fct>     <fct>              <dbl> <fct>                 <dbl>
+    ## 1 871      43 No        Travel_Freque~      1422 Sales                     2
+    ## 2 872      33 No        Travel_Rarely        461 Research ~               13
+    ## 3 873      55 Yes       Travel_Rarely        267 Sales                    13
+    ## 4 874      36 No        Non-Travel          1351 Research ~                9
+    ## 5 875      27 No        Travel_Rarely       1302 Research ~               19
+    ## 6 876      39 Yes       Travel_Rarely        895 Sales                     5
+    ## # ... with 28 more variables: Education <dbl>, EducationField <fct>,
+    ## #   EmployeeCount <chr>, EmployeeNumber <chr>, EnvironmentSatisfaction <dbl>,
+    ## #   Gender <fct>, HourlyRate <dbl>, JobInvolvement <dbl>, JobLevel <dbl>,
+    ## #   JobRole <fct>, JobSatisfaction <dbl>, MaritalStatus <fct>,
+    ## #   MonthlyRate <dbl>, NumCompaniesWorked <dbl>, Over18 <chr>, OverTime <fct>,
+    ## #   PercentSalaryHike <dbl>, PerformanceRating <dbl>,
+    ## #   RelationshipSatisfaction <dbl>, StandardHours <chr>,
+    ## #   StockOptionLevel <dbl>, TotalWorkingYears <dbl>,
+    ## #   TrainingTimesLastYear <dbl>, WorkLifeBalance <dbl>, YearsAtCompany <dbl>,
+    ## #   YearsInCurrentRole <dbl>, YearsSinceLastPromotion <dbl>,
+    ## #   YearsWithCurrManager <dbl>
+
+### Convert Integers to Factors
+
+``` r
+data$JobInvolvement <- factor(data$JobInvolvement, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$JobSatisfaction <- factor(data$JobSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$PerformanceRating <- factor(data$PerformanceRating, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Good", "Excellent", "Outstanding"))
+
+data$RelationshipSatisfaction <- factor(data$RelationshipSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$WorkLifeBalance <- factor(data$WorkLifeBalance, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Bad", "Better", "Good", "Best"))
+
+### THIS WAS NOT ACTUALLY PROVIDED ON THE WALL
+data$EnvironmentSatisfaction <- factor(data$EnvironmentSatisfaction, ordered = TRUE,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Low", "Medium", "High", "Very High"))
+
+data$StockOptionLevel <- factor(data$StockOptionLevel, ordered = TRUE,
+                              levels = c(0, 1, 2, 3),
+                              labels = c("Zero", "One", "Two", "Three"))
+
+data$JobLevel <- factor(data$JobLevel, ordered = TRUE,
+                              levels = c(1, 2, 3, 4, 5),
+                              labels = c("One", "Two", "Three", "Four", "Five"))
+
+data$Education <- factor(data$Education, ordered = FALSE,
+                              levels = c(1, 2, 3, 4, 5),
+                              labels = c("One", "Two", "Three", "Four", "Five"))
+```
+
+## Prepare Dataframe
+
+``` r
+cols_to_remove <- c("ID", "EmployeeNumber", "EmployeeCount", "StandardHours", "Over18")
+
+
+data.competition <- data # %>%
+  # select(-cols_to_remove) # %>%
+  # mutate(Attrition = factor(Attrition, labels = c("No", "Yes"))) 
+
+summary(data.competition)
+```
+
+    ##       ID                 Age        Attrition           BusinessTravel
+    ##  Length:300         Min.   :18.00   No :249   Non-Travel       : 24   
+    ##  Class :character   1st Qu.:29.00   Yes: 51   Travel_Frequently: 62   
+    ##  Mode  :character   Median :36.00             Travel_Rarely    :214   
+    ##                     Mean   :36.27                                     
+    ##                     3rd Qu.:42.00                                     
+    ##                     Max.   :60.00                                     
+    ##                                                                       
+    ##    DailyRate                       Department  DistanceFromHome Education  
+    ##  Min.   : 105.0   Human Resources       : 17   Min.   : 1.00    One  : 40  
+    ##  1st Qu.: 429.2   Research & Development:190   1st Qu.: 2.00    Two  : 51  
+    ##  Median : 693.0   Sales                 : 93   Median : 7.00    Three:123  
+    ##  Mean   : 783.2                                Mean   : 8.70    Four : 75  
+    ##  3rd Qu.:1171.2                                3rd Qu.:11.25    Five : 11  
+    ##  Max.   :1492.0                                Max.   :29.00               
+    ##                                                                            
+    ##           EducationField EmployeeCount      EmployeeNumber    
+    ##  Human Resources :  5    Length:300         Length:300        
+    ##  Life Sciences   :118    Class :character   Class :character  
+    ##  Marketing       : 32    Mode  :character   Mode  :character  
+    ##  Medical         :100                                         
+    ##  Other           : 18                                         
+    ##  Technical Degree: 27                                         
+    ##                                                               
+    ##  EnvironmentSatisfaction    Gender      HourlyRate       JobInvolvement
+    ##  Low      :56            Female:129   Min.   : 30.00   Low      : 16   
+    ##  Medium   :53            Male  :171   1st Qu.: 48.00   Medium   : 75   
+    ##  High     :95                         Median : 66.00   High     :181   
+    ##  Very High:96                         Mean   : 66.52   Very High: 28   
+    ##                                       3rd Qu.: 85.25                   
+    ##                                       Max.   :100.00                   
+    ##                                                                        
+    ##   JobLevel                        JobRole    JobSatisfaction  MaritalStatus
+    ##  One  :108   Sales Executive          :69   Low      :57     Divorced: 71  
+    ##  Two  :118   Research Scientist       :59   Medium   :55     Married :135  
+    ##  Three: 49   Laboratory Technician    :51   High     :95     Single  : 94  
+    ##  Four : 16   Manufacturing Director   :27   Very High:93                   
+    ##  Five :  9   Healthcare Representative:26                                  
+    ##              Manager                  :21                                  
+    ##              (Other)                  :47                                  
+    ##   MonthlyRate    NumCompaniesWorked    Over18          OverTime 
+    ##  Min.   : 2122   Min.   :0.00       Length:300         No :224  
+    ##  1st Qu.: 7778   1st Qu.:1.00       Class :character   Yes: 76  
+    ##  Median :13508   Median :2.00       Mode  :character            
+    ##  Mean   :14091   Mean   :2.74                                   
+    ##  3rd Qu.:20464   3rd Qu.:4.00                                   
+    ##  Max.   :26999   Max.   :9.00                                   
+    ##                                                                 
+    ##  PercentSalaryHike   PerformanceRating RelationshipSatisfaction
+    ##  Min.   :11.00     Low        :  0     Low      :55            
+    ##  1st Qu.:12.75     Good       :  0     Medium   :78            
+    ##  Median :14.00     Excellent  :252     High     :88            
+    ##  Mean   :15.28     Outstanding: 48     Very High:79            
+    ##  3rd Qu.:18.00                                                 
+    ##  Max.   :25.00                                                 
+    ##                                                                
+    ##  StandardHours      StockOptionLevel TotalWorkingYears TrainingTimesLastYear
+    ##  Length:300         Zero :117        Min.   : 0.00     Min.   :0.00         
+    ##  Class :character   One  :129        1st Qu.: 6.00     1st Qu.:2.00         
+    ##  Mode  :character   Two  : 41        Median : 9.00     Median :3.00         
+    ##                     Three: 13        Mean   :10.78     Mean   :2.82         
+    ##                                      3rd Qu.:14.00     3rd Qu.:3.00         
+    ##                                      Max.   :40.00     Max.   :6.00         
+    ##                                                                             
+    ##  WorkLifeBalance YearsAtCompany   YearsInCurrentRole YearsSinceLastPromotion
+    ##  Bad   : 18      Min.   : 0.000   Min.   : 0.0       Min.   : 0.00          
+    ##  Better: 75      1st Qu.: 3.000   1st Qu.: 2.0       1st Qu.: 0.00          
+    ##  Good  :181      Median : 5.000   Median : 3.0       Median : 1.00          
+    ##  Best  : 26      Mean   : 6.623   Mean   : 4.2       Mean   : 2.14          
+    ##                  3rd Qu.: 9.000   3rd Qu.: 7.0       3rd Qu.: 3.00          
+    ##                  Max.   :33.000   Max.   :16.0       Max.   :15.00          
+    ##                                                                             
+    ##  YearsWithCurrManager
+    ##  Min.   : 0.000      
+    ##  1st Qu.: 2.000      
+    ##  Median : 3.000      
+    ##  Mean   : 3.817      
+    ##  3rd Qu.: 7.000      
+    ##  Max.   :15.000      
+    ## 
+
+### Make prediction
+
+``` r
+data.competition$MonthlyIncome <- round(predict(lm.model.reduced, data.competition), 0)
+
+head(data.competition)
+```
+
+    ## # A tibble: 6 x 36
+    ##   ID      Age Attrition BusinessTravel DailyRate Department DistanceFromHome
+    ##   <chr> <dbl> <fct>     <fct>              <dbl> <fct>                 <dbl>
+    ## 1 871      43 No        Travel_Freque~      1422 Sales                     2
+    ## 2 872      33 No        Travel_Rarely        461 Research ~               13
+    ## 3 873      55 Yes       Travel_Rarely        267 Sales                    13
+    ## 4 874      36 No        Non-Travel          1351 Research ~                9
+    ## 5 875      27 No        Travel_Rarely       1302 Research ~               19
+    ## 6 876      39 Yes       Travel_Rarely        895 Sales                     5
+    ## # ... with 29 more variables: Education <fct>, EducationField <fct>,
+    ## #   EmployeeCount <chr>, EmployeeNumber <chr>, EnvironmentSatisfaction <ord>,
+    ## #   Gender <fct>, HourlyRate <dbl>, JobInvolvement <ord>, JobLevel <ord>,
+    ## #   JobRole <fct>, JobSatisfaction <ord>, MaritalStatus <fct>,
+    ## #   MonthlyRate <dbl>, NumCompaniesWorked <dbl>, Over18 <chr>, OverTime <fct>,
+    ## #   PercentSalaryHike <dbl>, PerformanceRating <ord>,
+    ## #   RelationshipSatisfaction <ord>, StandardHours <chr>,
+    ## #   StockOptionLevel <ord>, TotalWorkingYears <dbl>,
+    ## #   TrainingTimesLastYear <dbl>, WorkLifeBalance <ord>, YearsAtCompany <dbl>,
+    ## #   YearsInCurrentRole <dbl>, YearsSinceLastPromotion <dbl>,
+    ## #   YearsWithCurrManager <dbl>, MonthlyIncome <dbl>
+
+### Export competition csv
+
+``` r
+# write.csv(data.competition, file = "../../data/Case2PredictionsRobinson Salary.csv", row.names = F)
+```
