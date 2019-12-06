@@ -3,7 +3,12 @@
 Created by [Chance Robinson](https://github.com/RobinsonCW)
 
 ## Purpose
-Talent Management case study for predicting employee turnover
+Talent Management case study for predicting employee attrition and salary information
+
+
+## YouTube Video
+
+* [Talent Management Analysis (video)](https://youtu.be/F4uCEhT7YoM): An video recording of the power point presentation.
 
 
 ## Analysis Files
@@ -22,7 +27,9 @@ Talent Management case study for predicting employee turnover
 
 The dataset [readme](https://github.com/RobinsonCW/CaseStudy2DDS/blob/master/data/README.md) provides a reference for the source files.
 
-* [`CaseStudy2-data.csv`](https://github.com/RobinsonCW/CaseStudy2DDS/tree/master/data/CaseStudy2-data.csv): the Talent Management Case Study dataset.
+* [`CaseStudy2-data.csv`](https://github.com/RobinsonCW/CaseStudy2DDS/tree/master/data/CaseStudy2-data.csv): the Talent Management Case Study dataset
+* [`Case2PredictionsRobinson Attrition.csv`](https://github.com/RobinsonCW/CaseStudy2DDS/blob/master/data/Case2PredictionsRobinson%20Attrition.csv): preditions for attrition 
+* [`Case2PredictionsRobinson Salary.csv`](https://github.com/RobinsonCW/CaseStudy2DDS/blob/master/data/Case2PredictionsRobinson%20Salary.csv): predictions for salary
 
 ## Codebook
 
