@@ -453,6 +453,112 @@ plot(g)
 
 
 
+## Logistic Regression
+
+### Prepare Dataframe
+
+```{r data-preparation-logistic-regression}
+
+cols_to_remove <- c("ID", "EmployeeNumber", "EmployeeCount", "StandardHours", "Over18")
+
+
+data.mod <- data %>%
+  select(-cols_to_remove) %>%
+  mutate(Attrition = factor(Attrition, labels = c("No", "Yes"))) 
+
+# summary(data.mod)
+
+# str(data.mod)
+
+```
+
+
+## Train / Test Split
+
+```{r logistic-regression-train-test-split}
+
+set.seed(1234)
+
+sample.data <- sample_frac(data.mod, 1)
+
+split.perc = .70
+
+train.indices = sample(1:dim(sample.data)[1],round(split.perc * dim(sample.data)[1]))
+
+train = sample.data[train.indices,]
+test = sample.data[-train.indices,]
+
+train <- upSample(train, as.factor(train$Attrition), list = FALSE)
+train$Class <- NULL
+
+# library(DMwR)
+# train <- SMOTE(Attrition ~ ., train, perc.over = 100, perc.under=200)
+
+
+```
+
+
+### Build the model
+
+```{r logistic-regression-model}
+
+
+lg.model <- glm(Attrition~DistanceFromHome+JobInvolvement+OverTime+BusinessTravel+NumCompaniesWorked+WorkLifeBalance+EnvironmentSatisfaction+YearsSinceLastPromotion+YearsWithCurrManager+TrainingTimesLastYear, data = train, family = binomial("logit"))
+summary(lg.model)
+
+
+```
+
+
+### Make predictions
+
+
+```{r logistic-regression-predict}
+
+test$predict <- predict(lg.model, test, type="response")
+test$predict <- as.factor(ifelse(test$predict >0.45, "Yes", "No"))
+
+
+
+```
+
+
+### Test performance
+
+```{r logistic-regression-performance-test}
+
+
+
+confusionMatrix(data=test$predict,  
+                reference=test$Attrition, "Yes")
+
+```
+
+
+### Area Under the Curve
+
+```{r logistic-regression-auc-plot-test, fig.align = "center", message=FALSE, error=FALSE, warning=FALSE}
+
+# ?pROC
+
+auc <- roc(as.integer(test$Attrition), as.integer(test$predict))
+
+
+g <- ggroc(auc, alpha = 0.5, colour = "red", linetype = 2, size = 2) +
+  theme_minimal() + 
+  ggtitle(paste('AUC of Test Set:', round(auc$auc[[1]],4))) + 
+  geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color="darkgrey", linetype="dashed")
+  
+
+plot(g)
+
+
+
+```
+
+
+
+
 ## Support Vector Machines
 
 ### Prepare Dataframe
@@ -923,5 +1029,7 @@ test.model.reduced.cv
 
 ```
 
+# Conclusion
 
+Model Performance surprisingly was not substantially different between the classification models that were reviewed.  Machine Learning algorithms can outperform classical models even with relatively small data sets as we saw with our 870 observations.  (split between train and test data sets with a 70/30 ratio)  Cross Validation was also instrumental in our ability to control for overfitting as we generally saw unrealistic performance outcomes with using only the training data set to validate against.
 
