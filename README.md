@@ -20,7 +20,7 @@ Talent Management case study for predicting employee turnover
 
 ## Data
 
-The dataset [readme](https://github.com/RobinsonCW/BeerAnalysis/blob/master/data/README.md) provides a reference for the source files.
+The dataset [readme](https://github.com/RobinsonCW/CaseStudy2DDS/blob/master/data/README.md) provides a reference for the source files.
 
 * [`CaseStudy2-data.csv`](https://github.com/RobinsonCW/CaseStudy2DDS/tree/master/data/CaseStudy2-data.csv): the Talent Management Case Study dataset.
 
